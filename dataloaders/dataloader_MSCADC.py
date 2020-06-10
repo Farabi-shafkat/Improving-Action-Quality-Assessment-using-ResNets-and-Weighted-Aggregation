@@ -95,7 +95,7 @@ class VideoDataset(Dataset):
                                         transforms.ToTensor(),
                                         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
         image_list = sorted((glob.glob(os.path.join(dataset_frames_dir,
-                                                    str('{:02d}'.format(self.keys[ix][0])), '*.jpg'))))
+                                                    str('video{:d}_ag'.format(self.keys[ix][0])), '*.jpg'))))
         end_frame = self.annotations.get(self.keys[ix]).get('end_frame')
         # temporal augmentation
         if self.mode == 'train':
