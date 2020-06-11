@@ -89,8 +89,13 @@ class VideoDataset(Dataset):
         transform = transforms.Compose([transforms.CenterCrop(H),
                                         transforms.ToTensor(),
                                         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-        image_list = sorted((glob.glob(os.path.join(dataset_frames_dir,
-                                                    str('video{:d}_ag'.format(self.keys[ix][0])), '*.jpg'))))
+#        image_list = sorted((glob.glob(os.path.join(dataset_frames_dir,str('video{}_frames'.format(self.keys[ix][0])), '*.jpg'))))
+        image_list=[]
+       
+        
+            
+        
+                                             
         end_frame = self.annotations.get(self.keys[ix]).get('end_frame')
         # temporal augmentation
         if self.mode == 'train':
@@ -101,6 +106,12 @@ class VideoDataset(Dataset):
         # spatial augmentation
         if self.mode == 'train':
             hori_flip = random.randint(0,1)
+
+        index_list = [ x for x in range(start_frame,end_frame)]
+        image_list= { cur:os.path.join("/content/content",'video{:d}_frames'.format(self.keys[ix][0]), '{:d}.jpg'.format(cur))   for cur in index_list}
+  
+       # print(" debuf farabi {}".format(len(image_list)))  
+       # print(image_list)    
 
         images = torch.zeros(sample_length, C, H, W)
         for i in np.arange(0, sample_length):

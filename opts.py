@@ -10,7 +10,8 @@
 # }
 
 #save models
-saving_dir = '/content/drive/save_models_c3d_avg'
+saving_dir = '/content/drive/My Drive/what_and_how_well_you_learned_paper_imeplementation/authors_code_models'
+graph_save_dir = 'content/drive/My Drive/what_and_how_well_you_learned_paper_imeplementation/authors_code_graph'
 
 # declaring random seed
 randomseed = 0
@@ -19,7 +20,7 @@ randomseed = 0
 dataset_dir = '/content/dataset'
 
 # directory tp store train/test split lists and annotations
-anno_n_splits_dir = dataset_dir + '/ready_2_Use/MTL-AQA_split_0_data'
+anno_n_splits_dir = dataset_dir + '/Ready_2_Use/MTL-AQA_split_0_data'
 
 # directory containing extracted frames
 dataset_frames_dir = '/content/content'

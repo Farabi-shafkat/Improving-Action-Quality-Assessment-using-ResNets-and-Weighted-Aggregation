@@ -25,18 +25,21 @@ from models.C3DAVG.S2VTModel import S2VTModel
 from opts import *
 from utils import utils_1
 import numpy as np
+from make_graph import draw_graph
+
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 torch.backends.cudnn.deterministic=True
 
 def update_graph_data(epoch,tr_loss,ts_loss):
+    path = os.path.join(graph_save_dir,'graph_data.npy')
     if epoch==0 :
         graph_data = np.array([[tr_loss],[ts_loss]])
     else:
-        graph_data = np.load('/content/drive/graph_data.npy')
+        graph_data = np.load(path)
         np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
 
-    np.save('/content/drive/graph_data.npy',  graph_data)
+    np.save(path,  graph_data)
 
 def save_model(model, model_name, epoch, path):
     model_path = os.path.join(path, '%s_%d.pth' % (model_name, epoch))
@@ -247,8 +250,8 @@ def main():
         for param_group in optimizer.param_groups:
             print('Current learning rate: ', param_group['lr'])
 
-        train_phase(train_dataloader, optimizer, criterions, epoch)
-        test_phase(test_dataloader)
+        tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
+        ts_loss=test_phase(test_dataloader)
 
         if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)
@@ -259,6 +262,8 @@ def main():
             if with_caption:
                 save_model(model_caption, 'model_caption', epoch, saving_dir)
 
+        update_graph_data(epoch,tr_loss,ts_loss)   
+        draw_graph()
 
 
 if __name__ == '__main__':
