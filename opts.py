@@ -65,3 +65,6 @@ model_ckpt_interval = 1 # in epochs
 base_learning_rate = 0.0001
 
 temporal_stride = 16
+
+
+initial_epoch = 0 # first epoch that should run 

@@ -47,6 +47,7 @@ def save_model(model, model_name, epoch, path):
 
 
 def train_phase(train_dataloader, optimizer, criterions, epoch):
+    accumulated_loss = 0
     criterion_final_score = criterions['criterion_final_score']; penalty_final_score = criterions['penalty_final_score']
     if with_dive_classification:
         criterion_dive_classifier = criterions['criterion_dive_classifier']
@@ -110,11 +111,11 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         if with_caption:
             loss_caption = criterion_caption(seq_probs, true_captions[:, 1:], true_captions_mask[:, 1:])
             loss += loss_caption*0.01
-
+        
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
+        accumulated_loss += loss.detach()
         if iteration % 20 == 0:
             print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss, ' FS Loss: ', loss_final_score, end="")
             if with_dive_classification:
@@ -123,10 +124,18 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
                   print(' Cap Loss: ', loss_caption, end="")
             print(' ')
         iteration += 1
+    return accumulated_loss/iteration
 
 
-def test_phase(test_dataloader):
+def test_phase(test_dataloader,criterions):
     print('In testphase...')
+    accumulated_loss = 0
+    criterion_final_score = criterions['criterion_final_score']; penalty_final_score = criterions['penalty_final_score']
+    if with_dive_classification:
+        criterion_dive_classifier = criterions['criterion_dive_classifier']
+    if with_caption:
+        criterion_caption = criterions['criterion_caption']
+
     with torch.no_grad():
         pred_scores = []; true_scores = []
         if with_dive_classification:
@@ -140,8 +149,9 @@ def test_phase(test_dataloader):
             model_dive_classifier.eval()
         if with_caption:
             model_caption.eval()
-
+        iteration = 0
         for data in test_dataloader:
+            true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
             true_scores.extend(data['label_final_score'].data.numpy())
             if with_dive_classification:
                 true_position.extend(data['label_position'].numpy())
@@ -180,7 +190,12 @@ def test_phase(test_dataloader):
                     pred_rot_type.extend(np.argwhere(temp_rot_type[i] == max(temp_rot_type[i]))[0])
                     pred_ss_no.extend(np.argwhere(temp_ss_no[i] == max(temp_ss_no[i]))[0])
                     pred_tw_no.extend(np.argwhere(temp_tw_no[i] == max(temp_tw_no[i]))[0])
-
+                
+            loss_final_score = (criterion_final_score(temp_final_score, true_final_score) + penalty_final_score(temp_final_score, true_final_score))
+            loss = 0
+            loss += loss_final_score
+            accumulated_loss += loss.detach
+            iteration += 1
         if with_dive_classification:
             position_correct = 0; armstand_correct = 0; rot_type_correct = 0; ss_no_correct = 0; tw_no_correct = 0
             for i in range(len(pred_position)):
@@ -201,11 +216,12 @@ def test_phase(test_dataloader):
             tw_no_accu = tw_no_correct / len(pred_tw_no) * 100
             print('Accuracies: Position: ', position_accu, ' Armstand: ', armstand_accu, ' Rot_type: ', rot_type_accu,
                   ' SS_no: ', ss_no_accu, ' TW_no: ', tw_no_accu)
-
+        
         rho, p = stats.spearmanr(pred_scores, true_scores)
         print('Predicted scores: ', pred_scores)
         print('True scores: ', true_scores)
         print('Correlation: ', rho)
+        return accumulated_loss/iteration
 
 
 def main():
@@ -251,7 +267,7 @@ def main():
             print('Current learning rate: ', param_group['lr'])
 
         tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
-        ts_loss=test_phase(test_dataloader)
+        ts_loss=test_phase(test_dataloader,criterions)
 
         if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)
@@ -268,9 +284,14 @@ def main():
 
 if __name__ == '__main__':
     # loading the altered C3D backbone (ie C3D upto before fc-6)
-    model_CNN_pretrained_dict = torch.load('/content/c3d.pickle')
+
     model_CNN = C3D_altered()
     model_CNN_dict = model_CNN.state_dict()
+    if initial_epoch == 0:
+        model_CNN_pretrained_dict = torch.load('/content/c3d.pickle')
+    else:
+        model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
+
     model_CNN_pretrained_dict = {k: v for k, v in model_CNN_pretrained_dict.items() if k in model_CNN_dict}
     model_CNN_dict.update(model_CNN_pretrained_dict)
     model_CNN.load_state_dict(model_CNN_dict)
@@ -278,16 +299,27 @@ if __name__ == '__main__':
 
     # loading our fc6 layer
     model_my_fc6 = my_fc6()
+    #model_fc6_dict = model_my_fc6.state_dict()
+    if initial_epoch > 0:
+        model_fc6_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_my_fc6', initial_epoch-1))))  
+        model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
     model_my_fc6.cuda()
 
     # loading our score regressor
     model_score_regressor = score_regressor()
+    if initial_epoch > 0:
+        model_score_regressor_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_score_regressor', initial_epoch-1))))
+        model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
     model_score_regressor = model_score_regressor.cuda()
+    
     print('Using Final Score Loss')
 
     if with_dive_classification:
         # loading our dive classifier
         model_dive_classifier = dive_classifier()
+        if initial_epoch > 0:
+            model_dive_classifier_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_dive_classifier', initial_epoch-1))))
+            model_dive_classifier.load_state_dict(model_dive_classifier_pretrained_dict)
         model_dive_classifier = model_dive_classifier.cuda()
         print('Using Dive Classification Loss')
 
@@ -297,6 +329,9 @@ if __name__ == '__main__':
                                   caption_lstm_dim_word, caption_lstm_dim_vid,
                                   rnn_cell=caption_lstm_cell_type, n_layers=caption_lstm_num_layers,
                                   rnn_dropout_p=caption_lstm_dropout)
+        if initial_epoch > 0:
+            model_caption_pretrained_dict = torch.load((os.path.join(path, '%s_%d.pth' % ('model_caption', initial_epoch-1))))  
+            model_caption.load_state_dict(model_caption_pretrained_dict)
         model_caption = model_caption.cuda()
         print('Using Captioning Loss')
 
