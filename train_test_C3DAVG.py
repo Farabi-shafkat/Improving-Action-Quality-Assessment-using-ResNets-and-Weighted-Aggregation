@@ -37,7 +37,7 @@ def update_graph_data(epoch,tr_loss,ts_loss):
         graph_data = np.array([[tr_loss],[ts_loss]])
     else:
         graph_data = np.load(path)
-        np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
+        graph_data = np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
 
     np.save(path,  graph_data)
 
@@ -115,7 +115,7 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        accumulated_loss += loss.detach()
+        accumulated_loss += loss.item()
         if iteration % 20 == 0:
             print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss, ' FS Loss: ', loss_final_score, end="")
             if with_dive_classification:
@@ -194,7 +194,7 @@ def test_phase(test_dataloader,criterions):
             loss_final_score = (criterion_final_score(temp_final_score, true_final_score) + penalty_final_score(temp_final_score, true_final_score))
             loss = 0
             loss += loss_final_score
-            accumulated_loss += loss.detach
+            accumulated_loss += loss.item()
             iteration += 1
         if with_dive_classification:
             position_correct = 0; armstand_correct = 0; rot_type_correct = 0; ss_no_correct = 0; tw_no_correct = 0
@@ -268,7 +268,8 @@ def main():
 
         tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
         ts_loss=test_phase(test_dataloader,criterions)
-
+        #tr_loss=0
+        #ts_loss=0
         if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)
             save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
@@ -277,7 +278,7 @@ def main():
                 save_model(model_dive_classifier, 'model_dive_classifier', epoch, saving_dir)
             if with_caption:
                 save_model(model_caption, 'model_caption', epoch, saving_dir)
-
+        print("[INFO ] saving data {} {}".format(tr_loss,ts_loss))
         update_graph_data(epoch,tr_loss,ts_loss)   
         draw_graph()
 

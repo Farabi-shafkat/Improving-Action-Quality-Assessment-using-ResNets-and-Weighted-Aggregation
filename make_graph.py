@@ -30,10 +30,22 @@ def draw_graph():
     path = os.path.join(graph_save_dir,'graph_data.npy')
     graph_data = np.load(path)
     #np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
-    grp =  graph()
-    for i in range(graph_data.shape[1]):
-        grp.update_graph(graph_data[i][0],graph_data[i][1])
-    grp.draw_and_save()
+    #grp =  graph()
+   # print(graph_data.shape)
+    save_name=os.path.join(graph_save_dir,"model_graph.png")
+    
+    plt.plot( np.arange(0,graph_data.shape[1]), graph_data[0,:],color='lightblue',linewidth=3,label='training_loss',marker='o', linestyle='dashed')
+    plt.plot( np.arange(0,graph_data.shape[1]), graph_data[1,:],color='darkgreen',linewidth=3,label='test_loss',marker='o', linestyle='dashed')
+    if graph_data.shape[1]==1:
+        plt.xlabel("Epoch #")
+        plt.ylabel("Total_loss")
+        plt.legend()
+        plt.ylim(0,350)
+        plt.xlim(0,100)
+    plt.savefig(save_name)
+    #for i in range(graph_data.shape[1]):
+#   grp.update_graph(graph_data[0][i],graph_data[1][i])
+  #  grp.draw_and_save()
 
 
 if __name__=='__main__':
