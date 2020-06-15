@@ -40,7 +40,7 @@ def draw_graph():
         plt.xlabel("Epoch #")
         plt.ylabel("Total_loss")
         plt.legend()
-        plt.ylim(0,350)
+        plt.ylim(0,15)
         plt.xlim(0,100)
     plt.savefig(save_name)
     #for i in range(graph_data.shape[1]):

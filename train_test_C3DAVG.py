@@ -37,7 +37,7 @@ def update_graph_data(epoch,tr_loss,ts_loss):
         graph_data = np.array([[tr_loss],[ts_loss]])
     else:
         graph_data = np.load(path)
-        graph_data = np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
+        np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
 
     np.save(path,  graph_data)
 
@@ -260,7 +260,7 @@ def main():
     print('Training set size: ', len(train_dataloader)*train_batch_size,';    Test set size: ', len(test_dataloader)*test_batch_size)
 
     # actual training, testing loops
-    for epoch in range(100):
+    for epoch in range(initial_epoch,100):
        # 
         print('-------------------------------------------------------------------------------------------------------')
         for param_group in optimizer.param_groups:
@@ -268,8 +268,7 @@ def main():
 
         tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
         ts_loss=test_phase(test_dataloader,criterions)
-        #tr_loss=0
-        #ts_loss=0
+
         if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)
             save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
@@ -278,7 +277,7 @@ def main():
                 save_model(model_dive_classifier, 'model_dive_classifier', epoch, saving_dir)
             if with_caption:
                 save_model(model_caption, 'model_caption', epoch, saving_dir)
-        print("[INFO ] saving data {} {}".format(tr_loss,ts_loss))
+
         update_graph_data(epoch,tr_loss,ts_loss)   
         draw_graph()
 
@@ -331,7 +330,7 @@ if __name__ == '__main__':
                                   rnn_cell=caption_lstm_cell_type, n_layers=caption_lstm_num_layers,
                                   rnn_dropout_p=caption_lstm_dropout)
         if initial_epoch > 0:
-            model_caption_pretrained_dict = torch.load((os.path.join(path, '%s_%d.pth' % ('model_caption', initial_epoch-1))))  
+            model_caption_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_caption', initial_epoch-1))))  
             model_caption.load_state_dict(model_caption_pretrained_dict)
         model_caption = model_caption.cuda()
         print('Using Captioning Loss')
