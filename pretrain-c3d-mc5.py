@@ -27,7 +27,7 @@ def update_graph_data(epoch,tr_loss):
         graph_data = np.array([[tr_loss],[0]])
     else:
         graph_data = np.load(path)
-        np.append( graph_data,np.array([[tr_loss],[0]]),axis= 1)
+        graph_data = np.append( graph_data,np.array([[tr_loss],[0]]),axis= 1)
 
     np.save(path,  graph_data)
 
@@ -82,7 +82,7 @@ def main():
         tr_loss=train_phase(dataloader, optimizer, criterion, epoch)
         update_graph_data(epoch,tr_loss)   
         draw_graph()
-
+        print('[INFO]  epoch {}  loss: {}'.format(epoch,tr_loss))
         if (epoch+1) % model_ckpt_interval == 0:
             save_model(model_CNN_MC5, 'model_CNN_MC5', epoch, saving_dir)
     
