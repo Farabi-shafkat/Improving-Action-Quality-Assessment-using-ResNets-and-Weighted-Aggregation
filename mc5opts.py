@@ -9,7 +9,7 @@ graph_save_dir = '/content/drive/My Drive/MC5_c3d/saved_graphs'
 randomseed = 0
 
 
-dataset_frames_dir = '/content/UCF-101-frames/'
+dataset_frames_dir = '/content/UCF-101-frames/content/UCF-101-frames'
 
 C, H, W = 3,112,112
 

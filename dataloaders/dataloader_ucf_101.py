@@ -41,7 +41,8 @@ def load_image(image_path, transform=None):
 class VideoDataset(Dataset):
     def __init__(self):
         super(VideoDataset, self).__init__()
-        self.video_list = glob.glob("/content/UCF-101-frames/*/*")
+        
+        self.video_list = glob.glob(os.path.join(dataset_frames_dir,'*','*'))
     
     def __getitem__(self, ix):
         transform = transforms.Compose([transforms.RandomCrop(H),
@@ -56,3 +57,17 @@ class VideoDataset(Dataset):
         data = {}
         data['video']=images
         return data 
+
+
+
+
+
+
+
+
+    def __len__(self):
+        sample_pool =   len(self.video_list)
+        return sample_pool
+
+
+

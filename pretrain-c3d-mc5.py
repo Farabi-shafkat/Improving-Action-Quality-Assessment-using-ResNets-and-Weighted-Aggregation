@@ -34,25 +34,29 @@ def update_graph_data(epoch,tr_loss):
 def train_phase(train_dataloader, optimizer, criterion, epoch):
     accumulated_loss = 0
 
-    model_CNN.test()
-    model_CNN_MC5_dict.train()
+    model_CNN.eval()
+    model_CNN_MC5.train()
 
     iteration = 0
 
     for data in train_dataloader:
-        video = data['video'].transpose_(1, 2).cuda()
+       
+        video = data['video'].transpose_(1, 2)
+        if torch.cuda.is_available():
+            video = video.cuda()
         batch_size, C, frames, H, W = video.shape
         #clip_feats = torch.Tensor([]).cuda()
         with torch.no_grad():
             clip_feats_CNN = model_CNN(video)
-        clip_feats_MC5 = model_CNN_MC5_dict(video)
+        clip_feats_MC5 = model_CNN_MC5(video)
         loss = criterion(clip_feats_CNN,clip_feats_MC5)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         accumulated_loss += loss.item()
-        
+        if iteration % 20 == 0:
+             print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss)
         iteration+=1
     
     return accumulated_loss/iteration 
@@ -92,14 +96,14 @@ if __name__=='__main__':
     model_CNN_pretrained_dict = {k: v for k, v in model_CNN_pretrained_dict.items() if k in model_CNN_dict}
     model_CNN_dict.update(model_CNN_pretrained_dict)
     model_CNN.load_state_dict(model_CNN_dict)
-    if torch.cuda.available():
+    if torch.cuda.is_available():
         model_CNN = model_CNN.cuda()
 
     model_CNN_MC5 = C3D_MC5()
     if initial_epoch!=0:
         model_CNN_MC5_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN_MC5', initial_epoch-1))))
         model_CNN_MC5.load_state_dict(model_CNN_MC5_dict)
-    if torch.cuda.available():
+    if torch.cuda.is_available():
         model_CNN_MC5.cuda()
     print('[INFO] loaded all the models')
 
