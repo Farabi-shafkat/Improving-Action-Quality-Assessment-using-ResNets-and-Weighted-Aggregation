@@ -10,8 +10,8 @@
 # }
 
 #save models
-saving_dir = '/content/drive/My Drive/what_and_how_well_you_learned_paper_imeplementation/authors_code_models'
-graph_save_dir = '/content/drive/My Drive/what_and_how_well_you_learned_paper_imeplementation/authors_code_graphs'
+saving_dir = '/content/drive/My Drive/authors_code_models'
+graph_save_dir = '/content/drive/My Drive/authors_code_graphs'
 
 # declaring random seed
 randomseed = 0
@@ -67,4 +67,4 @@ base_learning_rate = 0.0001
 temporal_stride = 16
 
 
-initial_epoch = 14 # first epoch that should run 
+initial_epoch = 0 # first epoch that should run 
