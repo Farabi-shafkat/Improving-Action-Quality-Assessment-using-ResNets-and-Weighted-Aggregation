@@ -37,7 +37,7 @@ def update_graph_data(epoch,tr_loss,ts_loss):
         graph_data = np.array([[tr_loss],[ts_loss]])
     else:
         graph_data = np.load(path)
-        graph_data = np.append( graph_data,np.array([[tr_loss],[0]]),axis= 1)
+        graph_data = np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
 
     np.save(path,  graph_data)
 

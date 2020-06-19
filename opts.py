@@ -68,3 +68,4 @@ temporal_stride = 16
 
 
 initial_epoch = 0 # first epoch that should run 
+
