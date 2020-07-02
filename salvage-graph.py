@@ -144,11 +144,11 @@ def main():
 
         graph_data[1][epoch]=ts_loss
         path_save = '/content/drive/My Drive/authors_code_graphs/graph_data_restored.npy'
-        np.save(path_save,  graph_data)
+        #np.save(path_save,  graph_data)
         rhos.append(rho)
     
     rho = np.array(rho,dtype=float)
-    plt.plot(no.arrange(0,99),rho,linewidth= 3,color = 'blue',marker ='o',style='dashed',label='rho')
+    plt.plot(np.arrange(0,99),rho,linewidth= 3,color = 'blue',marker ='o',style='dashed',label='rho')
     plt.xlabel("Epoch #")
     plt.ylabel("sp.cprrelation")
     plt.legend()
