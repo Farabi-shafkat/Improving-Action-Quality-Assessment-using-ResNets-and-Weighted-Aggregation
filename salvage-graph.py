@@ -92,7 +92,7 @@ def test_phase(test_dataloader,criterions):
         print('Predicted scores: ', pred_scores)
         print('True scores: ', true_scores)
         print('Correlation: ', rho)
-        return accumulated_loss/iteration
+        return accumulated_loss/iteration,rho
 
 
 def main():
@@ -123,6 +123,7 @@ def main():
     path = '/content/drive/My Drive/authors_code_graphs/graph_data.npy'
     graph_data = np.load(path)
     # actual training, testing loops
+    rhos = []
     for epoch in range(initial_epoch,graph_data.shape[1]):
        # 
         print('-------------------------------------------------------------------------------------------------------')
@@ -137,15 +138,22 @@ def main():
         model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', epoch))))
         model_CNN.load_state_dict(model_CNN_pretrained_dict )
 
-        ts_loss=test_phase(test_dataloader,criterions)
+        ts_loss,rho=test_phase(test_dataloader,criterions)
         
-        print('epoch {} ts_loss->{}'.format(epoch,ts_loss))
+        print('epoch {} ts_loss->{} , rho:{}'.format(epoch,ts_loss,rho))
 
         graph_data[1][epoch]=ts_loss
         path_save = '/content/drive/My Drive/authors_code_graphs/graph_data_restored.npy'
         np.save(path_save,  graph_data)
-        
-
+        rhos.append(rho)
+    
+    rho = np.array(rho,dtype=float)
+    plt.plot(no.arrange(0,99),rho,linewidth= 3,color = 'blue',marker ='o',style='dashed',label='rho')
+    plt.xlabel("Epoch #")
+    plt.ylabel("sp.cprrelation")
+    plt.legend()
+    plt.show()
+    np.save(rho,'/content/c3d_authors_implementation/rhos.npy')
          
         
 
