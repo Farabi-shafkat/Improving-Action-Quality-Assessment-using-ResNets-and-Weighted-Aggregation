@@ -25,7 +25,7 @@ def save_model(model, model_name, epoch, path):
     torch.save(model.state_dict(), model_path)
 
 def update_graph_data(epoch,tr_loss):
-    path = os.path.join(graph_save_dir,'graph_data_{}.npy'.foramt(model_type))
+    path = os.path.join(graph_save_dir,'graph_data_{}.npy'.format(model_type))
     if epoch==0 :
         graph_data = np.array([[tr_loss],[0]])
     else:

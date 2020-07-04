@@ -86,7 +86,21 @@ Proceedings of the IEEE international conference on computer vision. 2015.
 """
 
 if __name__ == "__main__":
-    c3d = C3D_MC5()
+    c3d = C3D_MC4()
     dummy_clip =  torch.zeros(1,3, 16, 112, 112)
+    
     print(dummy_clip.shape)
     h = c3d(dummy_clip)
+    param = c3d.parameters()
+    num =0
+    for p in param:
+        dims = p.shape
+    
+        mul = 1
+        for d in dims:
+         
+            mul *= d
+        num+=mul
+
+        
+    print(num)
