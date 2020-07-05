@@ -27,7 +27,11 @@ from MC5_training_opts import *
 from utils import utils_1
 import numpy as np
 from make_graph import draw_graph
-
+from models.C3DAVG.C3D_altered import C3D_altered
+from models.C3D_MC5 import C3D_MC5
+from models.c3d_seperable import C3D_SP
+from models.C3D_MC3 import C3D_MC3
+from models.C3D_MC4 import C3D_MC4
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 torch.backends.cudnn.deterministic=True
@@ -226,6 +230,13 @@ def test_phase(test_dataloader,criterions):
 
 
 def main():
+
+    if not os.path.exists(graph_save_dir):
+        os.mkdir(graph_save_dir)
+    if not os.path.exists(saving):
+        os.mkdir(saving_dir)
+        
+
     parameters_2_optimize = (list(model_CNN.parameters()) + list(model_my_fc6.parameters()) +
                            list(model_score_regressor.parameters()))
     parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
@@ -286,10 +297,21 @@ def main():
 if __name__ == '__main__':
     # loading the altered C3D backbone (ie C3D upto before fc-6)
 
-    model_CNN = C3D_MC5()
+    model_CNN = None
+
+    if model_type == 'mc5':
+        model_CNN = C3D_MC5()
+    if model_type == 'mc4':
+        model_CNN = C3D_MC4()
+    if model_type == 'mc3':
+        model_CNN = C3D_MC3()
+    if model_type == 'sp':
+        model_CNN = C3D_SP()
+
+
     model_CNN_dict = model_CNN.state_dict()
     if initial_epoch == 0:
-        model_CNN_pretrained_dict = torch.load('/content/drive/My Drive/MC5_c3d/saved_models/model_CNN_MC5_40.pth')
+        model_CNN_pretrained_dict = torch.load('/content/drive/My Drive/{}_final_code_models/model_CNN_{}_40.pth'.format(model_type,model_type))
     else:
         model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
 

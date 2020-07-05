@@ -11,7 +11,7 @@
 
 #save models
 
-model_type = 'mc4'
+model_type = 'sp'
 
 saving_dir = '/content/drive/My Drive/{}_final_code_models'.format(model_type)
 graph_save_dir = '/content/drive/My Drive/{}final_code_graphs'.format(model_type)

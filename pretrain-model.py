@@ -103,7 +103,7 @@ if __name__=='__main__':
 
     if not os.path.exists(graph_save_dir):
         os.mkdir(graph_save_dir)
-    if not os.path.exists(graph_save_dir):
+    if not os.path.exists(saving):
         os.mkdir(saving_dir)
 
     if torch.cuda.is_available():
@@ -120,7 +120,7 @@ if __name__=='__main__':
         model_CNN_student = C3D_SP()
 
     if initial_epoch!=0:
-        model_CNN_student_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_{}'.format(model_type), initial_epoch-1))))
+        model_CNN_student_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN_{}'.format(model_type), initial_epoch-1))))
         model_CNN_student.load_state_dict( model_CNN_student_dict)
     if torch.cuda.is_available():
         model_CNN_student.cuda()

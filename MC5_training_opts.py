@@ -9,9 +9,13 @@
 #   year={2019}
 # }
 
+
+
+model_type = 'mc4'
+
 #save models
-saving_dir = '/content/drive/My Drive/MC5_final_code_models'
-graph_save_dir = '/content/drive/My Drive/MC5_final_code_graphs'
+saving_dir = '/content/drive/My Drive/{}_final_code_models'.format(model_type)
+graph_save_dir = '/content/drive/My Drive/{}_final_code_graphs'.format(model_type)
 
 # declaring random seed
 randomseed = 0
@@ -68,4 +72,3 @@ temporal_stride = 16
 
 
 initial_epoch = 0 # first epoch that should run 
-
