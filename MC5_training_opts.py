@@ -14,8 +14,8 @@
 model_type = 'mc4'
 
 #save models
-saving_dir = '/content/drive/My Drive/{}_final_code_models'.format(model_type)
-graph_save_dir = '/content/drive/My Drive/{}_final_code_graphs'.format(model_type)
+saving_dir = '/content/drive/My Drive/{}_finaltraining_code_models'.format(model_type)
+graph_save_dir = '/content/drive/My Drive/{}_finaltraining_code_graphs'.format(model_type)
 
 # declaring random seed
 randomseed = 0
@@ -61,8 +61,8 @@ with_caption = True
 
 max_epochs = 100
 
-train_batch_size = 3
-test_batch_size = 5
+train_batch_size = 4
+test_batch_size = 4
 
 model_ckpt_interval = 1 # in epochs
 
@@ -71,4 +71,4 @@ base_learning_rate = 0.0001
 temporal_stride = 16
 
 
-initial_epoch = 0 # first epoch that should run 
+initial_epoch = 11 # first epoch that should run 

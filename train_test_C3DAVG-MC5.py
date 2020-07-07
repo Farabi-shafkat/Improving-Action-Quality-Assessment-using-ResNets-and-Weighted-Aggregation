@@ -36,13 +36,13 @@ from models.C3D_MC4 import C3D_MC4
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 torch.backends.cudnn.deterministic=True
 
-def update_graph_data(epoch,tr_loss,ts_loss):
+def update_graph_data(epoch,tr_loss,ts_loss,rho):
     path = os.path.join(graph_save_dir,'graph_data.npy')
     if epoch==0 :
-        graph_data = np.array([[tr_loss],[ts_loss]])
+        graph_data = np.array([[tr_loss],[ts_loss],[rho]])
     else:
         graph_data = np.load(path)
-        graph_data = np.append( graph_data,np.array([[tr_loss],[ts_loss]]),axis= 1)
+        graph_data = np.append( graph_data,np.array([[tr_loss],[ts_loss],[rho]]),axis= 1)
 
     np.save(path,  graph_data)
 
@@ -226,14 +226,14 @@ def test_phase(test_dataloader,criterions):
         print('Predicted scores: ', pred_scores)
         print('True scores: ', true_scores)
         print('Correlation: ', rho)
-        return accumulated_loss/iteration
+        return (accumulated_loss/iteration,rho)
 
 
 def main():
 
     if not os.path.exists(graph_save_dir):
         os.mkdir(graph_save_dir)
-    if not os.path.exists(saving):
+    if not os.path.exists(saving_dir):
         os.mkdir(saving_dir)
         
 
@@ -279,7 +279,7 @@ def main():
             print('Current learning rate: ', param_group['lr'])
 
         tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
-        ts_loss=test_phase(test_dataloader,criterions)
+        ts_loss,rho=test_phase(test_dataloader,criterions)
 
         if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)
@@ -290,7 +290,7 @@ def main():
             if with_caption:
                 save_model(model_caption, 'model_caption', epoch, saving_dir)
 
-        update_graph_data(epoch,tr_loss,ts_loss)   
+        update_graph_data(epoch,tr_loss,ts_loss,rho)   
         draw_graph()
 
 
