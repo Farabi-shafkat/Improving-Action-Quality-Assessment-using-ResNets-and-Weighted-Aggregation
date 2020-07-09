@@ -121,7 +121,7 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         loss.backward()
         optimizer.step()
         accumulated_loss += loss.item()
-        if iteration % 20 == 0:
+        if iteration % 50 == 0:
             print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss, ' FS Loss: ', loss_final_score, end="")
             if with_dive_classification:
                   print(' Cls Loss: ', loss_cls, end="")
@@ -249,8 +249,8 @@ def main():
         parameters_2_optimize_named = parameters_2_optimize_named + list(model_caption.named_parameters())
 
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
-    print('Parameters that will be learnt: ', parameters_2_optimize_named)
-
+  #  print('Parameters that will be learnt: ', parameters_2_optimize_named)
+    print('training model {}'.format(model_type))
     criterions = {}
     criterion_final_score = nn.MSELoss()
     penalty_final_score = nn.L1Loss()
@@ -289,7 +289,7 @@ def main():
                 save_model(model_dive_classifier, 'model_dive_classifier', epoch, saving_dir)
             if with_caption:
                 save_model(model_caption, 'model_caption', epoch, saving_dir)
-
+        print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
         update_graph_data(epoch,tr_loss,ts_loss,rho)   
         draw_graph()
 
