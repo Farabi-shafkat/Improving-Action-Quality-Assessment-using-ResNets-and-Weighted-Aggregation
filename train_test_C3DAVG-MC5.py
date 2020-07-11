@@ -249,6 +249,10 @@ def main():
         parameters_2_optimize_named = parameters_2_optimize_named + list(model_caption.named_parameters())
 
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
+    if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
+        optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  
+        optimizer.load_state_dict(optimizer_state_dic)
+
   #  print('Parameters that will be learnt: ', parameters_2_optimize_named)
     print('training model {}'.format(model_type))
     criterions = {}
@@ -285,6 +289,8 @@ def main():
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)
             save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
             save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
+            save_model(optimizer,'optimizer',epoch,saving_dir)
+
             if with_dive_classification:
                 save_model(model_dive_classifier, 'model_dive_classifier', epoch, saving_dir)
             if with_caption:
@@ -307,7 +313,8 @@ if __name__ == '__main__':
         model_CNN = C3D_MC3()
     if model_type == 'sp':
         model_CNN = C3D_SP()
-
+    if model_type == 'author':
+        model_CNN = C3D_altered
 
     model_CNN_dict = model_CNN.state_dict()
     if initial_epoch == 0:
