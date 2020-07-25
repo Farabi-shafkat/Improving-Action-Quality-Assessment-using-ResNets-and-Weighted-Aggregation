@@ -297,7 +297,7 @@ def main():
                 save_model(model_caption, 'model_caption', epoch, saving_dir)
         print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
         update_graph_data(epoch,tr_loss,ts_loss,rho)   
-        draw_graph()
+        #draw_graph()
 
 
 if __name__ == '__main__':
@@ -314,7 +314,7 @@ if __name__ == '__main__':
     if model_type == 'sp':
         model_CNN = C3D_SP()
     if model_type == 'author':
-        model_CNN = C3D_altered
+        model_CNN = C3D_altered()
 
     model_CNN_dict = model_CNN.state_dict()
     if initial_epoch == 0:

@@ -25,10 +25,10 @@ class STConv3d(nn.Module):
         self.conv = nn.Conv3d(in_planes, out_planes, kernel_size=(1,kernel_size,kernel_size),stride=(1,stride,stride),padding=(0,padding,padding))
         self.conv2 = nn.Conv3d(out_planes,out_planes,kernel_size=(kernel_size,1,1),stride=(stride,1,1),padding=(padding,0,0))
 
-       # self.bn=nn.BatchNorm3d(out_planes, eps=1e-3, momentum=0.001, affine=True)
+        self.bn=nn.BatchNorm3d(out_planes, eps=1e-3, momentum=0.001, affine=True)
         self.relu = nn.ReLU(inplace=True)
         
-        #self.bn2=nn.BatchNorm3d(out_planes, eps=1e-3, momentum=0.001, affine=True)
+        self.bn2=nn.BatchNorm3d(out_planes, eps=1e-3, momentum=0.001, affine=True)
         self.relu2=nn.ReLU(inplace=True)
         
         #nn.init.normal(self.conv2.weight,mean=0,std=0.01)
@@ -37,10 +37,10 @@ class STConv3d(nn.Module):
     def forward(self,x):
         x=self.conv(x)
         #x=self.conv2(x)
-      #  x=self.bn(x)
+        x=self.bn(x)
         x=self.relu(x)
         x=self.conv2(x)
-        #x=self.bn2(x)
+        x=self.bn2(x)
         x=self.relu2(x)
         return x
 
@@ -109,7 +109,14 @@ Proceedings of the IEEE international conference on computer vision. 2015.
 """
 
 if __name__ == "__main__":
+    #from torchviz import make_dot
     model = C3D_SP()
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     print(params)
+    
+    x = torch.zeros(1, 3, 16, 112, 112, dtype=torch.float)
+    out = model(x)
+    print(out.shape)
+
+   # make_dot(out).render("attached", format="png")

@@ -84,7 +84,7 @@ Proceedings of the IEEE international conference on computer vision. 2015.
 """
 
 if __name__ == "__main__":
-    c3d = C3D_MC5()
-    dummy_clip =  torch.zeros(1,3, 16, 112, 112)
-    print(dummy_clip.shape)
-    h = c3d(dummy_clip)
+    model = C3D_MC5()
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(params)

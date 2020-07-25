@@ -281,16 +281,54 @@ def main():
         update_graph_data(epoch,tr_loss,ts_loss)   
         draw_graph()
 
+def test_main():
+
+
+
+    criterions = {}
+    criterion_final_score = nn.MSELoss()
+    penalty_final_score = nn.L1Loss()
+    criterions['criterion_final_score'] = criterion_final_score
+    criterions['penalty_final_score'] = penalty_final_score
+    if with_dive_classification:
+        criterion_dive_classifier = nn.CrossEntropyLoss()
+        criterions['criterion_dive_classifier'] = criterion_dive_classifier
+    if with_caption:
+        criterion_caption = utils_1.LanguageModelCriterion()
+        criterions['criterion_caption'] = criterion_caption
+
+    #train_dataset = VideoDataset('train')
+    test_dataset = VideoDataset('test')
+   # train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=False)
+   # print('Length of train loader: ', len(train_dataloader))
+    print('Length of test loader: ', len(test_dataloader))
+    print('Test set size: ', len(test_dataloader)*test_batch_size)
+
+  
+
+     
+    ts_loss=test_phase(test_dataloader,criterions)
+
+    print("test loss: ",ts)
+    
+    return 
+
+
+
+
 
 if __name__ == '__main__':
     # loading the altered C3D backbone (ie C3D upto before fc-6)
 
     model_CNN = C3D_altered()
     model_CNN_dict = model_CNN.state_dict()
-    if initial_epoch == 0:
+    if initial_epoch == 0 and test_only==False:
         model_CNN_pretrained_dict = torch.load('/content/c3d.pickle')
-    else:
+    elif test_only==False:
         model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
+    else:
+        model_CNN_pretrained_dict = torch.load(os.path.join(pre_trained_weight_dir,'model_CNN_94.pth'))
 
     model_CNN_pretrained_dict = {k: v for k, v in model_CNN_pretrained_dict.items() if k in model_CNN_dict}
     model_CNN_dict.update(model_CNN_pretrained_dict)
@@ -303,6 +341,9 @@ if __name__ == '__main__':
     if initial_epoch > 0:
         model_fc6_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_my_fc6', initial_epoch-1))))  
         model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
+    elif test_only==True:
+        model_fc6_pretrained_dict = torch.load(os.path.join(pre_trained_weight_dir,'model_my_fc6_94.pth'))
+        model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
     model_my_fc6.cuda()
 
     # loading our score regressor
@@ -310,6 +351,10 @@ if __name__ == '__main__':
     if initial_epoch > 0:
         model_score_regressor_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_score_regressor', initial_epoch-1))))
         model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
+    elif test_only==True:
+        model_score_regressor_pretrained_dict = torch.load(os.path.join(pre_trained_weight_dir,'model_score_regressor_94.pth'))
+        model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
+
     model_score_regressor = model_score_regressor.cuda()
     
     print('Using Final Score Loss')
@@ -319,6 +364,9 @@ if __name__ == '__main__':
         model_dive_classifier = dive_classifier()
         if initial_epoch > 0:
             model_dive_classifier_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_dive_classifier', initial_epoch-1))))
+            model_dive_classifier.load_state_dict(model_dive_classifier_pretrained_dict)
+        elif test_only==True:
+            model_dive_classifier_pretrained_dict = torch.load(os.path.join(pre_trained_weight_dir,'model_dive_classifier_94.pth.pth'))
             model_dive_classifier.load_state_dict(model_dive_classifier_pretrained_dict)
         model_dive_classifier = model_dive_classifier.cuda()
         print('Using Dive Classification Loss')
@@ -332,7 +380,13 @@ if __name__ == '__main__':
         if initial_epoch > 0:
             model_caption_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_caption', initial_epoch-1))))  
             model_caption.load_state_dict(model_caption_pretrained_dict)
+        else:
+            model_caption_pretrained_dict = torch.load(os.path.join(pre_trained_weight_dir,'model_caption_94.pth'))
+            model_caption.load_state_dict(model_caption_pretrained_dict)
         model_caption = model_caption.cuda()
         print('Using Captioning Loss')
-
-    main()
+    
+    if test_only==True:
+        test_main()
+    else:
+        main()

@@ -13,6 +13,7 @@
 saving_dir = '/content/drive/My Drive/authors_code_models'
 graph_save_dir = '/content/drive/My Drive/authors_code_graphs'
 
+pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
 # declaring random seed
 randomseed = 0
 
@@ -66,6 +67,7 @@ base_learning_rate = 0.0001
 
 temporal_stride = 16
 
+test_only = True
 
 initial_epoch = 0 # first epoch that should run 
 

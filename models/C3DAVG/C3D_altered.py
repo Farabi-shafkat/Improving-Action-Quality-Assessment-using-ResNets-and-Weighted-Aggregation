@@ -12,10 +12,10 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from opts import randomseed
+#from opts import randomseed
 import random
 
-torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
+#torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 
 
 class C3D_altered(nn.Module):
@@ -49,25 +49,52 @@ class C3D_altered(nn.Module):
     def forward(self, x):
         h = self.relu(self.conv1(x))
         h = self.pool1(h)
+        print_shape("conv1",h)
 
         h = self.relu(self.conv2(h))
         h = self.pool2(h)
+        print_shape("conv2",h)
+
 
         h = self.relu(self.conv3a(h))
+        print_shape("conv3a",h)
         h = self.relu(self.conv3b(h))
+        print_shape("conv3b",h)
         h = self.pool3(h)
+        print_shape("pool3",h)
+        
 
         h = self.relu(self.conv4a(h))
+        print_shape("conv4a",h)
         h = self.relu(self.conv4b(h))
+        print_shape("conv4b",h)
         h = self.pool4(h)
+        print_shape("pool",h)
 
         h = self.relu(self.conv5a(h))
+        print_shape("conv5a",h)
         h = self.relu(self.conv5b(h))
+        print_shape("conv5b",h)
         h = self.pool5(h)
+        print_shape("pool5",h)
 
         h = h.view(-1, 8192)
         return h
 
+
+
+
+def print_shape(name,ten):
+    print("layer {} shape {}".format(name,ten.shape))
+
+if __name__ == "__main__":
+    model = C3D_altered()
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(params)
+    x = torch.zeros(1, 3, 16, 112, 112, dtype=torch.float)
+    out = model(x)
+    print(out.shape)
 
 """
 References

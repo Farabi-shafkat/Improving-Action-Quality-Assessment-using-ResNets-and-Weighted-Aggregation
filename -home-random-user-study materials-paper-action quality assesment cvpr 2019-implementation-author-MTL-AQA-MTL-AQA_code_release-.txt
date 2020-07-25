@@ -1,0 +1,1 @@
+/home/random-user/study materials/paper/action quality assesment cvpr 2019/implementation-author/MTL-AQA/MTL-AQA_code_release/train_test_C3DAVG.py

@@ -67,6 +67,12 @@ def main():
    
     print('[INFO]Parameters that will be learnt: ', parameters_2_optimize_named)
     optimizer = optim.Adam(parameters_2_optimize,lr=0.0001)
+
+    if initial_epoch!=0  and os.path.exists(os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))):
+        
+        optimizer_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))
+        optimizer.load_state_dict(optimizer_dict)
+
     criterion = nn.MSELoss()
     dataset = VideoDataset()
     dataloader = DataLoader(dataset, batch_size=train_batch_size, shuffle=True)
@@ -85,7 +91,7 @@ def main():
         print('[INFO]  epoch {}  loss: {}'.format(epoch,tr_loss))
         if (epoch+1) % model_ckpt_interval == 0:
             save_model(model_CNN_MC5, 'model_CNN_MC5', epoch, saving_dir)
-    
+            save_model(optimizer, 'optimzier', epoch, saving_dir)
 
 
 if __name__=='__main__':
@@ -103,6 +109,7 @@ if __name__=='__main__':
     if initial_epoch!=0:
         model_CNN_MC5_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN_MC5', initial_epoch-1))))
         model_CNN_MC5.load_state_dict(model_CNN_MC5_dict)
+
     if torch.cuda.is_available():
         model_CNN_MC5.cuda()
     print('[INFO] loaded all the models')
