@@ -310,8 +310,8 @@ def test_main():
      
     ts_loss=test_phase(test_dataloader,criterions)
 
-    print("test loss: ",ts)
-    
+    print("test loss: ",ts_loss)
+
     return 
 
 
