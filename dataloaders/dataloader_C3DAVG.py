@@ -29,6 +29,7 @@ def load_image_train(image_path, hori_flip, transform=None):
     image = Image.open(image_path)
     size = input_resize
     interpolator_idx = random.randint(0,3)
+    image = image/255
     interpolators = [Image.NEAREST, Image.BILINEAR, Image.BICUBIC, Image.LANCZOS]
     interpolator = interpolators[interpolator_idx]
     image = image.resize(size, interpolator)
@@ -36,19 +37,20 @@ def load_image_train(image_path, hori_flip, transform=None):
         image = image.transpose(Image.FLIP_LEFT_RIGHT)
     if transform is not None:
         image = transform(image).unsqueeze(0)
-    return image/255
+    return image
 
 
 def load_image(image_path, transform=None):
     image = Image.open(image_path)
     size = input_resize
     interpolator_idx = random.randint(0,3)
+    image = image/255
     interpolators = [Image.NEAREST, Image.BILINEAR, Image.BICUBIC, Image.LANCZOS]
     interpolator = interpolators[interpolator_idx]
     image = image.resize(size, interpolator)
     if transform is not None:
         image = transform(image).unsqueeze(0)
-    return image/255
+    return image
 
 
 class VideoDataset(Dataset):
