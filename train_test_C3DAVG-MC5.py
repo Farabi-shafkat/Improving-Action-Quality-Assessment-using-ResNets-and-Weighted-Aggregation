@@ -29,7 +29,7 @@ import numpy as np
 from make_graph import draw_graph
 from models.C3DAVG.C3D_altered import C3D_altered
 from models.C3D_MC5 import C3D_MC5
-from models.c3d_seperable import C3D_SP
+from models.c3d_seperable_batch_norm import C3D_SP
 from models.C3D_MC3 import C3D_MC3
 from models.C3D_MC4 import C3D_MC4
 
@@ -318,7 +318,7 @@ if __name__ == '__main__':
 
     model_CNN_dict = model_CNN.state_dict()
     if initial_epoch == 0:
-        model_CNN_pretrained_dict = torch.load('/content/drive/My Drive/{}_final_code_models/model_CNN_{}_40.pth'.format(model_type,model_type))
+        model_CNN_pretrained_dict = torch.load('/content/drive/My Drive/Ucf-101-split1/saved_models/run/run_4/models/C3D_SP-ucf101_epoch-49.pth.tar')#'/content/drive/My Drive/{}_final_code_models/model_CNN_{}_40.pth'.format(model_type,model_type))
     else:
         model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
 

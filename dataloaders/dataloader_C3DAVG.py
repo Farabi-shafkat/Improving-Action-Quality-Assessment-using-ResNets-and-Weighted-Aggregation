@@ -36,7 +36,7 @@ def load_image_train(image_path, hori_flip, transform=None):
         image = image.transpose(Image.FLIP_LEFT_RIGHT)
     if transform is not None:
         image = transform(image).unsqueeze(0)
-    return image
+    return image/255
 
 
 def load_image(image_path, transform=None):
@@ -48,7 +48,7 @@ def load_image(image_path, transform=None):
     image = image.resize(size, interpolator)
     if transform is not None:
         image = transform(image).unsqueeze(0)
-    return image
+    return image/255
 
 
 class VideoDataset(Dataset):

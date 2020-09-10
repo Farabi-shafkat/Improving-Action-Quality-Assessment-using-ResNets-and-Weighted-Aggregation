@@ -27,7 +27,7 @@ anno_n_splits_dir = dataset_dir + '/Ready_2_Use/MTL-AQA_split_0_data'
 dataset_frames_dir = '/content/content'
 
 # sample length in terms of no of frames
-sample_length = 103
+sample_length = 99
 
 # input data dims; C3D-AVG:112; MSCADC: 180
 C, H, W = 3,112,112 #3,180,180#3,112,112#

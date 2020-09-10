@@ -11,11 +11,11 @@
 
 
 
-model_type = 'mc4'
+model_type = 'sp'
 
 #save models
-saving_dir = '/content/drive/My Drive/{}_finaltraining_code_models'.format(model_type)
-graph_save_dir = '/content/drive/My Drive/{}_finaltraining_code_graphs'.format(model_type)
+saving_dir = '/content/drive/My Drive/C3d-{}-batch-norm-more-pretrain'.format(model_type)
+graph_save_dir = '/content/drive/My Drive/C3d-{}-batch-norm-more-pretrain'.format(model_type)
 
 # declaring random seed
 randomseed = 0
@@ -56,8 +56,8 @@ caption_lstm_dropout = 0.5
 caption_lstm_lr = 0.0001
 
 # task 2 include
-with_dive_classification = True
-with_caption = True
+with_dive_classification = False
+with_caption = False
 
 max_epochs = 100
 
@@ -71,4 +71,4 @@ base_learning_rate = 0.0001
 temporal_stride = 16
 
 
-initial_epoch = 11 # first epoch that should run 
+initial_epoch = 0 # first epoch that should run 
