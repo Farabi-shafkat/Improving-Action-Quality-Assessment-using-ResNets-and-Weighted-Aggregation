@@ -23,7 +23,7 @@ from models.C3DAVG.my_fc6 import my_fc6
 from models.C3DAVG.score_regressor import score_regressor
 from models.C3DAVG.dive_classifier import dive_classifier
 from models.C3DAVG.S2VTModel import S2VTModel
-from MC5_training_opts import *
+from opts_resnet import *
 from utils import utils_1
 import numpy as np
 from make_graph import draw_graph
@@ -59,10 +59,6 @@ def save_model(model, model_name, epoch, path):
 def train_phase(train_dataloader, optimizer, criterions, epoch):
     accumulated_loss = 0
     criterion_final_score = criterions['criterion_final_score']; penalty_final_score = criterions['penalty_final_score']
-    if with_dive_classification:
-        criterion_dive_classifier = criterions['criterion_dive_classifier']
-    if with_caption:
-        criterion_caption = criterions['criterion_caption']
 
     model_CNN.train()
     model_my_fc6.train()
@@ -89,38 +85,24 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         batch_size, C, frames, H, W = video.shape
         clip_feats = torch.Tensor([]).cuda()
 
-        for i in np.arange(0, frames - 17, 16):
-            clip = video[:, :, i:i + 16, :, :]
+        for i in np.arange(0, frames - 17, 32):
+            clip = video[:, :, i:i + 32, :, :]
             clip_feats_temp = model_CNN(clip)
-            clip_feats_temp.unsqueeze_(0)
-            clip_feats_temp.transpose_(0, 1)
+            #clip_feats_temp.unsqueeze_(0)
+            #clip_feats_temp.transpose_(0, 1)
             clip_feats = torch.cat((clip_feats, clip_feats_temp), 1)
-        clip_feats_avg = clip_feats.mean(1)
+        #clip_feats_avg = clip_feats.mean(1)
 
-        sample_feats_fc6 = model_my_fc6(clip_feats_avg)
+        sample_feats_fc6 = model_my_fc6(clip_feats)
 
         pred_final_score = model_score_regressor(sample_feats_fc6)
-        if with_dive_classification:
-            (pred_position, pred_armstand, pred_rot_type, pred_ss_no,
-             pred_tw_no) = model_dive_classifier(sample_feats_fc6)
-        if with_caption:
-            seq_probs, _ = model_caption(clip_feats, true_captions, 'train')
+        
 
-        loss_final_score = (criterion_final_score(pred_final_score, true_final_score)
-                            + penalty_final_score(pred_final_score, true_final_score))
-        loss = 0
-        loss += loss_final_score
-        if with_dive_classification:
-            loss_position = criterion_dive_classifier(pred_position, true_postion)
-            loss_armstand = criterion_dive_classifier(pred_armstand, true_armstand)
-            loss_rot_type = criterion_dive_classifier(pred_rot_type, true_rot_type)
-            loss_ss_no = criterion_dive_classifier(pred_ss_no, true_ss_no)
-            loss_tw_no = criterion_dive_classifier(pred_tw_no, true_tw_no)
-            loss_cls = loss_position + loss_armstand + loss_rot_type + loss_ss_no + loss_tw_no
-            loss += loss_cls
-        if with_caption:
-            loss_caption = criterion_caption(seq_probs, true_captions[:, 1:], true_captions_mask[:, 1:])
-            loss += loss_caption*0.01
+        loss = (criterion_final_score(pred_final_score, true_final_score)
+                           # + penalty_final_score(pred_final_score, true_final_score))
+        #loss = 0
+        #loss = loss_final_score
+     
         
         optimizer.zero_grad()
         loss.backward()
@@ -141,91 +123,44 @@ def test_phase(test_dataloader,criterions):
     print('In testphase...')
     accumulated_loss = 0
     criterion_final_score = criterions['criterion_final_score']; penalty_final_score = criterions['penalty_final_score']
-    if with_dive_classification:
-        criterion_dive_classifier = criterions['criterion_dive_classifier']
-    if with_caption:
-        criterion_caption = criterions['criterion_caption']
 
     with torch.no_grad():
         pred_scores = []; true_scores = []
-        if with_dive_classification:
-            pred_position = []; pred_armstand = []; pred_rot_type = []; pred_ss_no = []; pred_tw_no = []
-            true_position = []; true_armstand = []; true_rot_type = []; true_ss_no = []; true_tw_no = []
+
 
         model_CNN.eval()
         model_my_fc6.eval()
         model_score_regressor.eval()
-        if with_dive_classification:
-            model_dive_classifier.eval()
-        if with_caption:
-            model_caption.eval()
+
         iteration = 0
         for data in test_dataloader:
             true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
             true_scores.extend(data['label_final_score'].data.numpy())
-            if with_dive_classification:
-                true_position.extend(data['label_position'].numpy())
-                true_armstand.extend(data['label_armstand'].numpy())
-                true_rot_type.extend(data['label_rot_type'].numpy())
-                true_ss_no.extend(data['label_ss_no'].numpy())
-                true_tw_no.extend(data['label_tw_no'].numpy())
+         
             video = data['video'].transpose_(1, 2).cuda()
 
             batch_size, C, frames, H, W = video.shape
             clip_feats = torch.Tensor([]).cuda()
 
-            for i in np.arange(0, frames - 17, 16):
-                clip = video[:, :, i:i + 16, :, :]
+            for i in np.arange(0, frames - 17, 32):
+                clip = video[:, :, i:i + 32, :, :]
                 clip_feats_temp = model_CNN(clip)
-                clip_feats_temp.unsqueeze_(0)
-                clip_feats_temp.transpose_(0, 1)
+                #clip_feats_temp.unsqueeze_(0)
+                #clip_feats_temp.transpose_(0, 1)
                 clip_feats = torch.cat((clip_feats, clip_feats_temp), 1)
-            clip_feats_avg = clip_feats.mean(1)
+            #clip_feats_avg = clip_feats.mean(1)
 
-            sample_feats_fc6 = model_my_fc6(clip_feats_avg)
+            sample_feats_fc6 = model_my_fc6(clip_feats)
             temp_final_score = model_score_regressor(sample_feats_fc6)
             pred_scores.extend([element[0] for element in temp_final_score.data.cpu().numpy()])
-            if with_dive_classification:
-                temp_position, temp_armstand, temp_rot_type, temp_ss_no, temp_tw_no = model_dive_classifier(sample_feats_fc6)
-                softmax_layer = nn.Softmax(dim=1)
-                temp_position = softmax_layer(temp_position).data.cpu().numpy()
-                temp_armstand = softmax_layer(temp_armstand).data.cpu().numpy()
-                temp_rot_type = softmax_layer(temp_rot_type).data.cpu().numpy()
-                temp_ss_no = softmax_layer(temp_ss_no).data.cpu().numpy()
-                temp_tw_no = softmax_layer(temp_tw_no).data.cpu().numpy()
 
-                for i in range(len(temp_position)):
-                    pred_position.extend(np.argwhere(temp_position[i] == max(temp_position[i]))[0])
-                    pred_armstand.extend(np.argwhere(temp_armstand[i] == max(temp_armstand[i]))[0])
-                    pred_rot_type.extend(np.argwhere(temp_rot_type[i] == max(temp_rot_type[i]))[0])
-                    pred_ss_no.extend(np.argwhere(temp_ss_no[i] == max(temp_ss_no[i]))[0])
-                    pred_tw_no.extend(np.argwhere(temp_tw_no[i] == max(temp_tw_no[i]))[0])
                 
-            loss_final_score = (criterion_final_score(temp_final_score, true_final_score) + penalty_final_score(temp_final_score, true_final_score))
-            loss = 0
-            loss += loss_final_score
+            loss = (criterion_final_score(temp_final_score, true_final_score)# + penalty_final_score(temp_final_score, true_final_score))
+          #  loss = 0
+          #  loss += loss_final_score
             accumulated_loss += loss.item()
             iteration += 1
-        if with_dive_classification:
-            position_correct = 0; armstand_correct = 0; rot_type_correct = 0; ss_no_correct = 0; tw_no_correct = 0
-            for i in range(len(pred_position)):
-                if pred_position[i] == true_position[i]:
-                    position_correct += 1
-                if pred_armstand[i] == true_armstand[i]:
-                    armstand_correct += 1
-                if pred_rot_type[i] == true_rot_type[i]:
-                    rot_type_correct += 1
-                if pred_ss_no[i] == true_ss_no[i]:
-                    ss_no_correct += 1
-                if pred_tw_no[i] == true_tw_no[i]:
-                    tw_no_correct += 1
-            position_accu = position_correct / len(pred_position) * 100
-            armstand_accu = armstand_correct / len(pred_armstand) * 100
-            rot_type_accu = rot_type_correct / len(pred_rot_type) * 100
-            ss_no_accu = ss_no_correct / len(pred_ss_no) * 100
-            tw_no_accu = tw_no_correct / len(pred_tw_no) * 100
-            print('Accuracies: Position: ', position_accu, ' Armstand: ', armstand_accu, ' Rot_type: ', rot_type_accu,
-                  ' SS_no: ', ss_no_accu, ' TW_no: ', tw_no_accu)
+    
         
         rho, p = stats.spearmanr(pred_scores, true_scores)
         print('Predicted scores: ', pred_scores)
@@ -246,31 +181,23 @@ def main():
                            list(model_score_regressor.parameters()))
     parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
                                    list(model_score_regressor.named_parameters()))
-    if with_dive_classification:
-        parameters_2_optimize = parameters_2_optimize + list(model_dive_classifier.parameters())
-        parameters_2_optimize_named = parameters_2_optimize_named + list(model_dive_classifier.named_parameters())
-    if with_caption:
-        parameters_2_optimize = parameters_2_optimize + list(model_caption.parameters())
-        parameters_2_optimize_named = parameters_2_optimize_named + list(model_caption.named_parameters())
+
 
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
+
     if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
         optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  
         optimizer.load_state_dict(optimizer_state_dic)
 
   #  print('Parameters that will be learnt: ', parameters_2_optimize_named)
     print('training model {}'.format(model_type))
+   
     criterions = {}
     criterion_final_score = nn.MSELoss()
     penalty_final_score = nn.L1Loss()
     criterions['criterion_final_score'] = criterion_final_score
     criterions['penalty_final_score'] = penalty_final_score
-    if with_dive_classification:
-        criterion_dive_classifier = nn.CrossEntropyLoss()
-        criterions['criterion_dive_classifier'] = criterion_dive_classifier
-    if with_caption:
-        criterion_caption = utils_1.LanguageModelCriterion()
-        criterions['criterion_caption'] = criterion_caption
+
 
     train_dataset = VideoDataset('train')
     test_dataset = VideoDataset('test')
@@ -296,10 +223,7 @@ def main():
             save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
             save_model(optimizer,'optimizer',epoch,saving_dir)
 
-            if with_dive_classification:
-                save_model(model_dive_classifier, 'model_dive_classifier', epoch, saving_dir)
-            if with_caption:
-                save_model(model_caption, 'model_caption', epoch, saving_dir)
+
         print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
         update_graph_data(epoch,tr_loss,ts_loss,rho)   
         #draw_graph()
@@ -308,32 +232,21 @@ def main():
 if __name__ == '__main__':
     # loading the altered C3D backbone (ie C3D upto before fc-6)
 
-    model_CNN = None
+   
 
-    if model_type == 'mc5':
-        model_CNN = C3D_MC5()
-    if model_type == 'mc4':
-        model_CNN = C3D_MC4()
-    if model_type == 'mc3':
-        model_CNN = C3D_MC3()
-    if model_type == 'sp':
-        model_CNN = C3D_SP()
-    if model_type == 'author':
-        model_CNN = C3D_altered()
+    model_CNN = build_mode(scratch = True)
 
-    model_CNN_dict = model_CNN.state_dict()
-    if initial_epoch == 0:
-        model_CNN_pretrained_dict = torch.load('/content/drive/My Drive/Ucf-101-split1/saved_models/run/run_4/models/C3D_SP-ucf101_epoch-49.pth.tar')#'/content/drive/My Drive/{}_final_code_models/model_CNN_{}_40.pth'.format(model_type,model_type))
-    else:
+    #model_CNN_dict = model_CNN.state_dict()
+
+    if initial_epoch > 0:
         model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
-
-    model_CNN_pretrained_dict = {k: v for k, v in model_CNN_pretrained_dict.items() if k in model_CNN_dict}
-    model_CNN_dict.update(model_CNN_pretrained_dict)
-    model_CNN.load_state_dict(model_CNN_dict)
+        model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
+        model_CNN.load_state_dict(model_CNN_dict)
+    
     model_CNN = model_CNN.cuda()
 
     # loading our fc6 layer
-    model_my_fc6 = my_fc6()
+    model_my_fc6 = fc_layer()
     #model_fc6_dict = model_my_fc6.state_dict()
     if initial_epoch > 0:
         model_fc6_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_my_fc6', initial_epoch-1))))  
@@ -349,25 +262,5 @@ if __name__ == '__main__':
     
     print('Using Final Score Loss')
 
-    if with_dive_classification:
-        # loading our dive classifier
-        model_dive_classifier = dive_classifier()
-        if initial_epoch > 0:
-            model_dive_classifier_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_dive_classifier', initial_epoch-1))))
-            model_dive_classifier.load_state_dict(model_dive_classifier_pretrained_dict)
-        model_dive_classifier = model_dive_classifier.cuda()
-        print('Using Dive Classification Loss')
-
-    if with_caption:
-        # loading our caption model
-        model_caption = S2VTModel(vocab_size, max_cap_len, caption_lstm_dim_hidden,
-                                  caption_lstm_dim_word, caption_lstm_dim_vid,
-                                  rnn_cell=caption_lstm_cell_type, n_layers=caption_lstm_num_layers,
-                                  rnn_dropout_p=caption_lstm_dropout)
-        if initial_epoch > 0:
-            model_caption_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_caption', initial_epoch-1))))  
-            model_caption.load_state_dict(model_caption_pretrained_dict)
-        model_caption = model_caption.cuda()
-        print('Using Captioning Loss')
 
     main()
