@@ -24,6 +24,6 @@ def build_model(scratch = False):
         pretrained = True
     else:
         pretrained = False
-    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_ig65m", num_classes=359, pretrained=pretrained)
+    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_kinetics", num_classes=400, pretrained=pretrained)
     custom_model = custom(model)
     return custom_model

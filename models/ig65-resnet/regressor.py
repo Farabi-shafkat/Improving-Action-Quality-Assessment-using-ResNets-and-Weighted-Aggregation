@@ -4,7 +4,7 @@ import torch.nn as nn
 import numpy as np
 import random
 from opts import randomseed
-
+import numpy as np
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 
 class score_regressor(nn.Module):

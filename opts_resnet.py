@@ -10,8 +10,8 @@
 # }
 
 #save models
-saving_dir = '/content/drive/My Drive/resnet_basedAQA'
-graph_save_dir = '/content/drive/My Drive/resnet_basedAQA'
+saving_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics'
+graph_save_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics'
 
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
 # declaring random seed
@@ -43,7 +43,7 @@ final_score_std = 17
 
 max_epochs = 100
 
-train_batch_size = 3
+train_batch_size = 2
 test_batch_size = 5
 
 model_ckpt_interval = 1 # in epochs

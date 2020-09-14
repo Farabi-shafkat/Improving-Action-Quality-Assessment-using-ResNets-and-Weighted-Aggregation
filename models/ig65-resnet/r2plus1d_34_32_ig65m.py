@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import random
 from opts import randomseed
-
+import numpy as np
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 
 class custom(nn.Module): 
@@ -14,11 +14,16 @@ class custom(nn.Module):
         self.relu = nn.ReLU()
     def forward(self, x):
         x = self.features(x)
-        x = x.view(1, -1)
+        x = x.view(-1, 512)
         x = self.relu(self.fc(x))
         return x
 
-def build_model(scratch = True):
-    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_ig65m", num_classes=359, pretrained=scratch)
+def build_model(scratch = False):
+    pretrained = None
+    if scratch == False:
+        pretrained = True
+    else:
+        pretrained = False
+    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_ig65m", num_classes=359, pretrained=pretrained)
     custom_model = custom(model)
     return custom_model

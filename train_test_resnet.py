@@ -63,23 +63,12 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
     model_CNN.train()
     model_my_fc6.train()
     model_score_regressor.train()
-    if with_dive_classification:
-        model_dive_classifier.train()
-    if with_caption:
-        model_caption.train()
+ 
 
     iteration = 0
     for data in train_dataloader:
         true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
-        if with_dive_classification:
-            true_postion = data['label_position'].cuda()
-            true_armstand = data['label_armstand'].cuda()
-            true_rot_type = data['label_rot_type'].cuda()
-            true_ss_no = data['label_ss_no'].cuda()
-            true_tw_no = data['label_tw_no'].cuda()
-        if with_caption:
-            true_captions = data['label_captions'].cuda()
-            true_captions_mask = data['label_captions_mask'].cuda()
+     
         video = data['video'].transpose_(1, 2).cuda()
 
         batch_size, C, frames, H, W = video.shape
@@ -98,8 +87,8 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         pred_final_score = model_score_regressor(sample_feats_fc6)
         
 
-        loss = (criterion_final_score(pred_final_score, true_final_score)
-                           # + penalty_final_score(pred_final_score, true_final_score))
+        loss = criterion_final_score(pred_final_score, true_final_score)
+                           # + penalty_final_score(pred_final_score, true_final_score)
         #loss = 0
         #loss = loss_final_score
      
@@ -109,11 +98,8 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         optimizer.step()
         accumulated_loss += loss.item()
         if iteration % 50 == 0:
-            print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss, ' FS Loss: ', loss_final_score, end="")
-            if with_dive_classification:
-                  print(' Cls Loss: ', loss_cls, end="")
-            if with_caption:
-                  print(' Cap Loss: ', loss_caption, end="")
+            print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss,end="")
+          
             print(' ')
         iteration += 1
     return accumulated_loss/iteration
@@ -155,7 +141,7 @@ def test_phase(test_dataloader,criterions):
             pred_scores.extend([element[0] for element in temp_final_score.data.cpu().numpy()])
 
                 
-            loss = (criterion_final_score(temp_final_score, true_final_score)# + penalty_final_score(temp_final_score, true_final_score))
+            loss = criterion_final_score(temp_final_score, true_final_score)# + penalty_final_score(temp_final_score, true_final_score))
           #  loss = 0
           #  loss += loss_final_score
             accumulated_loss += loss.item()
@@ -190,7 +176,7 @@ def main():
         optimizer.load_state_dict(optimizer_state_dic)
 
   #  print('Parameters that will be learnt: ', parameters_2_optimize_named)
-    print('training model {}'.format(model_type))
+    #print('training model {}'.format(model_type))
    
     criterions = {}
     criterion_final_score = nn.MSELoss()
@@ -234,7 +220,7 @@ if __name__ == '__main__':
 
    
 
-    model_CNN = build_mode(scratch = True)
+    model_CNN = build_model(scratch = True)
 
     #model_CNN_dict = model_CNN.state_dict()
 
