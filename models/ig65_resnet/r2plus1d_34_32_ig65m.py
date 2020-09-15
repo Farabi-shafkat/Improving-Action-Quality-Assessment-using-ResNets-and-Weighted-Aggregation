@@ -12,10 +12,11 @@ class custom(nn.Module):
         self.features = nn.Sequential(*list(model.children())[:-1])
         self.fc = nn.Linear(in_features=512,out_features=256,bias=True)
         self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(p=0.5)
     def forward(self, x):
         x = self.features(x)
         x = x.view(1, -1)
-        x = self.relu(self.fc(x))
+        x = self.dropout(self.relu(self.fc(x)))
         return x
 
 def build_model(scratch = False):

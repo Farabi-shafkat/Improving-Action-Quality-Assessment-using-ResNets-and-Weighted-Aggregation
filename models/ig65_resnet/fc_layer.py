@@ -11,7 +11,7 @@ class fc_layer(nn.Module):
         super(my_fc6, self).__init__()
         self.fc = nn.Linear(768,256)
         self.relu = nn.ReLU()
-
+        self.dropout = nn.Dropout(p=0.5)
     def forward(self, x):
-        x = self.relu(self.fc(x))
+        x = self.dropout(self.relu(self.fc(x)))
         return x
