@@ -75,14 +75,15 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         clip_feats = torch.Tensor([]).cuda()
 
         for i in np.arange(0, frames - 17, 32):
-            clip = video[:, :, i:i + 32, :, :]
-            clip_feats_temp = model_CNN(clip)
-            #clip_feats_temp.unsqueeze_(0)
-            #clip_feats_temp.transpose_(0, 1)
-            clip_feats = torch.cat((clip_feats, clip_feats_temp), 1)
+                clip = video[:, :, i:i + 32, :, :]
+                clip_feats_temp = model_CNN(clip)   ## none X 512
+                clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
+                #clip_feats_temp.transpose_(0, 1)
+                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+        clip_feats_avg = clip_feats.mean(2)  ##none X512
         #clip_feats_avg = clip_feats.mean(1)
 
-        sample_feats_fc6 = model_my_fc6(clip_feats)
+        sample_feats_fc6 = model_my_fc6(clip_feats_avg)
 
         pred_final_score = model_score_regressor(sample_feats_fc6)
         
@@ -130,13 +131,13 @@ def test_phase(test_dataloader,criterions):
 
             for i in np.arange(0, frames - 17, 32):
                 clip = video[:, :, i:i + 32, :, :]
-                clip_feats_temp = model_CNN(clip)
-                #clip_feats_temp.unsqueeze_(0)
+                clip_feats_temp = model_CNN(clip)   ## none X 512
+                clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
                 #clip_feats_temp.transpose_(0, 1)
-                clip_feats = torch.cat((clip_feats, clip_feats_temp), 1)
-            #clip_feats_avg = clip_feats.mean(1)
+                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+            clip_feats_avg = clip_feats.mean(2)  ##none X512
 
-            sample_feats_fc6 = model_my_fc6(clip_feats)
+            sample_feats_fc6 = model_my_fc6(clip_feats_avg)
             temp_final_score = model_score_regressor(sample_feats_fc6)
             pred_scores.extend([element[0] for element in temp_final_score.data.cpu().numpy()])
 
@@ -163,13 +164,19 @@ def main():
         os.mkdir(saving_dir)
         
 
-    parameters_2_optimize = (list(model_CNN.parameters()) + list(model_my_fc6.parameters()) +
-                           list(model_score_regressor.parameters()))
-    parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
-                                   list(model_score_regressor.named_parameters()))
+   # parameters_2_optimize = (list(model_CNN.parameters()) + list(model_my_fc6.parameters()) +
+                           #list(model_score_regressor.parameters()))
+    #parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
+                                  # list(model_score_regressor.named_parameters()))
 
+    parameters_2_optimize = [
 
-    optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
+        {'params':model_CNN.parameters(),'lr': 0},
+        {'params':model_my_fc6.parameters()},
+        {'params':model_score_regressor.parameters()}
+
+    ]
+    optimizer = optim.Adam(parameters_2_optimize, lr=1e-3)
 
     if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
         optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  

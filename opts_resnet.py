@@ -10,8 +10,8 @@
 # }
 
 #save models
-saving_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics'
-graph_save_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics'
+saving_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics_diff_lr'
+graph_save_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics_diff_lr'
 
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
 # declaring random seed
