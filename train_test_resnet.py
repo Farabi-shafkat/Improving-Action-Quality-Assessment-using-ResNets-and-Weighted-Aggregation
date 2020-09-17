@@ -169,13 +169,13 @@ def main():
     #parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
                                   # list(model_score_regressor.named_parameters()))
 
-    parameters_2_optimize = [
+    for param in list(model_CNN.features.parameters())[:-39]:
+    #  print(fet," sds ",fet.parameters)
+        model_CNN.requires_grad = False
 
-        {'params':model_CNN.parameters(),'lr': 0},
-        {'params':model_my_fc6.parameters()},
-        {'params':model_score_regressor.parameters()}
 
-    ]
+    parameters_2_optimize = [param for param in model_CNN.parameters() if param.requires_grad] + list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
+
     optimizer = optim.Adam(parameters_2_optimize, lr=1e-3)
 
     if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
