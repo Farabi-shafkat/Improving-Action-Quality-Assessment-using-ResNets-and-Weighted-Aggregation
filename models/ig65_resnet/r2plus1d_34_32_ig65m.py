@@ -23,8 +23,9 @@ def build_model(scratch = False):
     pretrained = None
     if scratch == False:
         pretrained = True
+        print('using pretrained weights from moabitcoin/ig65m-pytorch repo')
     else:
         pretrained = False
-    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_kinetics", num_classes=400, pretrained=pretrained)
+    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_8_kinetics", num_classes=487, pretrained=pretrained)
     custom_model = custom(model)
     return custom_model
