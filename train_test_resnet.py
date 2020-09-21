@@ -32,9 +32,9 @@ from models.C3D_MC5 import C3D_MC5
 from models.c3d_seperable_batch_norm import C3D_SP
 from models.C3D_MC3 import C3D_MC3
 from models.C3D_MC4 import C3D_MC4
-from models.ig65_resnet.fc_layer import fc_layer
-from models.ig65_resnet.regressor import score_regressor
-from models.ig65_resnet.r2plus1d_34_32_ig65m import build_model
+from models.ig65_resnet2.fc_layer import fc_layer
+from models.ig65_resnet2.regressor import score_regressor
+from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
 
 
 
@@ -68,7 +68,7 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
     iteration = 0
     for data in train_dataloader:
         true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
-     
+        difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
         video = data['video'].transpose_(1, 2).cuda()
 
         batch_size, C, frames, H, W = video.shape
@@ -76,16 +76,21 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
 
         for i in np.arange(0, frames - 7,8):
                 clip = video[:, :, i:i + 8, :, :]
-                clip_feats_temp = model_CNN(clip)   ## none X 512
+                clip_feats_cnn = model_CNN(clip)   ## none X 512
+                clip_feats_temp = model_my_fc6(clip_feats_cnn)
+                
                 clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
+
                 #clip_feats_temp.transpose_(0, 1)
                 clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+
         clip_feats_avg = clip_feats.mean(2)  ##none X512
         #clip_feats_avg = clip_feats.mean(1)
 
-        sample_feats_fc6 = model_my_fc6(clip_feats_avg)
-
-        pred_final_score = model_score_regressor(sample_feats_fc6)
+        #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
+        print(difficulty)
+        print(model_score_regressor(clip_feats_avg))
+        pred_final_score = difficulty*model_score_regressor(clip_feats_avg)
         
 
         loss = criterion_final_score(pred_final_score, true_final_score) + penalty_final_score(pred_final_score, true_final_score)

@@ -154,6 +154,7 @@ class VideoDataset(Dataset):
                 ########## caption stuff #############
                 data['label_captions'] = torch.from_numpy(label_captions).type(torch.LongTensor)
                 data['label_captions_mask'] = torch.from_numpy(label_captions_mask).type(torch.FloatTensor)
+        data['DD'] = self.annotations.get(self.keys[ix]).get('difficulty')
         return data
 
 

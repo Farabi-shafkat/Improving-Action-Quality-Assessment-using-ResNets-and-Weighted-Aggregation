@@ -10,20 +10,22 @@ class custom(nn.Module):
         super(custom, self).__init__()
         
         self.features = nn.Sequential(*list(model.children())[:-1])
-        self.fc = nn.Linear(in_features=512,out_features=256,bias=True)
-        self.relu = nn.ReLU()
+        #self.fc = nn.Linear(in_features=512,out_features=256,bias=True)
+        #self.relu = nn.ReLU()
+       # self.dropout = nn.Dropout(p=0.5)
     def forward(self, x):
         x = self.features(x)
         x = x.view(-1, 512)
-        x = self.relu(self.fc(x))
+        #x = self.dropout(self.relu(self.fc(x)))
         return x
 
 def build_model(scratch = False):
     pretrained = None
     if scratch == False:
         pretrained = True
+        print('using pretrained weights from moabitcoin/ig65m-pytorch repo')
     else:
         pretrained = False
-    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_ig65m", num_classes=359, pretrained=pretrained)
+    model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_8_kinetics", num_classes=487, pretrained=pretrained)
     custom_model = custom(model)
     return custom_model
