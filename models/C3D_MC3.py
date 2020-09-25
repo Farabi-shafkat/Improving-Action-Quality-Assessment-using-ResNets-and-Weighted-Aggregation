@@ -50,34 +50,34 @@ class C3D_MC3(nn.Module):
     def forward(self, x):
         h = self.relu(self.conv1(x))
         h = self.pool1(h)
-        #print_shape("conv1",h)
+        print_shape("conv1",h)
 
         h = self.relu(self.conv2(h))
         h = self.pool2(h)
-        #print_shape("conv2",h)
+        print_shape("conv2",h)
 
 
         h = self.relu(self.conv3a(h))
-        #print_shape("conv3a",h)
+        print_shape("conv3a",h)
         h = self.relu(self.conv3b(h))
-        #print_shape("conv3b",h)
+        print_shape("conv3b",h)
         h = self.pool3(h)
-        #print_shape("pool3",h)
+        print_shape("pool3",h)
         
 
         h = self.relu(self.conv4a(h))
-        #print_shape("conv4a",h)
+        print_shape("conv4a",h)
         h = self.relu(self.conv4b(h))
-        #print_shape("conv4b",h)
+        print_shape("conv4b",h)
         h = self.pool4(h)
-       # print_shape("pool",h)
+        print_shape("pool",h)
 
         h = self.relu(self.conv5a(h))
-        #print_shape("conv5a",h)
+        print_shape("conv5a",h)
         h = self.relu(self.conv5b(h))
-        #print_shape("conv5b",h)
+        print_shape("conv5b",h)
         h = self.pool5(h)
-        #print_shape("pool5",h)
+        print_shape("pool5",h)
 
         h = h.view(-1, 8192)
         return h

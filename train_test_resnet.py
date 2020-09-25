@@ -88,8 +88,8 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         #clip_feats_avg = clip_feats.mean(1)
 
         #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
-        print(difficulty)
-        print(model_score_regressor(clip_feats_avg))
+        #print(difficulty)
+        #print(model_score_regressor(clip_feats_avg))
         pred_final_score = difficulty*model_score_regressor(clip_feats_avg)
         
 
@@ -127,23 +127,30 @@ def test_phase(test_dataloader,criterions):
         for data in test_dataloader:
             true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
             true_scores.extend(data['label_final_score'].data.numpy())
-         
+            difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
             video = data['video'].transpose_(1, 2).cuda()
 
             batch_size, C, frames, H, W = video.shape
             clip_feats = torch.Tensor([]).cuda()
 
             for i in np.arange(0, frames - 7,8):
-                clip = video[:, :, i:i + 8, :, :]
-                clip_feats_temp = model_CNN(clip)   ## none X 512
-                clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
-                #clip_feats_temp.transpose_(0, 1)
-                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-      
-            clip_feats_avg = clip_feats.mean(2)  ##none X512
+                    clip = video[:, :, i:i + 8, :, :]
+                    clip_feats_cnn = model_CNN(clip)   ## none X 512
+                    clip_feats_temp = model_my_fc6(clip_feats_cnn)
+                    
+                    clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
 
-            sample_feats_fc6 = model_my_fc6(clip_feats_avg)
-            temp_final_score = model_score_regressor(sample_feats_fc6)
+                    #clip_feats_temp.transpose_(0, 1)
+                    clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+
+            clip_feats_avg = clip_feats.mean(2)  ##none X512
+            #clip_feats_avg = clip_feats.mean(1)
+
+            #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
+            #print(difficulty)
+            #print(model_score_regressor(clip_feats_avg))
+            temp_final_score = difficulty*model_score_regressor(clip_feats_avg)
+            #temp_final_score = model_score_regressor(sample_feats_fc6)
             pred_scores.extend([element[0] for element in temp_final_score.data.cpu().numpy()])
 
                 
@@ -173,15 +180,18 @@ def main():
                            #list(model_score_regressor.parameters()))
     #parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
                                   # list(model_score_regressor.named_parameters()))
-"""
-    for param in list(model_CNN.features.parameters())[:-39]:
-    #  print(fet," sds ",fet.parameters)
-        param.requires_grad = False
-"""
-
-    parameters_2_optimize = [param for param in model_CNN.parameters() if param.requires_grad] + list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
-
-    optimizer = optim.Adam(parameters_2_optimize, lr=1e-3)
+    """
+        for param in list(model_CNN.features.parameters())[:-39]:
+        #  print(fet," sds ",fet.parameters)
+            param.requires_grad = False
+    """
+   # model_CNN.requires_grad = False
+  #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
+    parameters_2_optimize = [
+        {'params': model_CNN.parameters(),'lr':0.00005},
+        {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())}
+    ]
+    optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
 
     if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
         optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  

@@ -10,9 +10,8 @@
 # }
 
 #save models
-saving_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics_diff_lr'
-graph_save_dir = '/content/drive/My Drive/resnet_basedAQA_kinetics_diff_lr'
-
+saving_dir = '/content/drive/My Drive/resnet_basedAQA_more_fc_layers_diff_lr_diff_modules'
+graph_save_dir = '/content/drive/My Drive/resnet_basedAQA_more_fc_layers_diff_lr_diff_modules'
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
 # declaring random seed
 randomseed = 0
@@ -50,7 +49,7 @@ model_ckpt_interval = 1 # in epochs
 
 base_learning_rate = 0.0001
 
-temporal_stride = 16
+temporal_stride = 18
 
 test_only = True
 
