@@ -42,6 +42,7 @@ torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.se
 torch.backends.cudnn.deterministic=True
 
 def update_graph_data(epoch,tr_loss,ts_loss,rho):
+    return 
     path = os.path.join(graph_save_dir,'graph_data.npy')
     if epoch==0 :
         graph_data = np.array([[tr_loss],[ts_loss],[rho]])
@@ -52,62 +53,12 @@ def update_graph_data(epoch,tr_loss,ts_loss,rho):
     np.save(path,  graph_data)
 
 def save_model(model, model_name, epoch, path):
+    return 
     model_path = os.path.join(path, '%s_%d.pth' % (model_name, epoch))
     torch.save(model.state_dict(), model_path)
 
 
-def train_phase(train_dataloader, optimizer, criterions, epoch):
-    accumulated_loss = 0
-    criterion_final_score = criterions['criterion_final_score']; penalty_final_score = criterions['penalty_final_score']
 
-    model_CNN.train()
-    model_my_fc6.train()
-    model_score_regressor.train()
- 
-
-    iteration = 0
-    for data in train_dataloader:
-        true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
-        difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
-        video = data['video'].transpose_(1, 2).cuda()
-
-        batch_size, C, frames, H, W = video.shape
-        clip_feats = torch.Tensor([]).cuda()
-
-        for i in np.arange(0, frames - 31,32):
-                clip = video[:, :, i:i + 32, :, :]
-                clip_feats_cnn = model_CNN(clip)   ## none X 512
-                clip_feats_temp = model_my_fc6(clip_feats_cnn)
-                
-                clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
-
-                #clip_feats_temp.transpose_(0, 1)
-                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-
-        clip_feats_avg = clip_feats.mean(2)  ##none X512
-        #clip_feats_avg = clip_feats.mean(1)
-
-        #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
-        #print(difficulty)
-        #print(model_score_regressor(clip_feats_avg))
-        pred_final_score = difficulty*model_score_regressor(clip_feats_avg)
-        
-
-        loss = criterion_final_score(pred_final_score, true_final_score) + penalty_final_score(pred_final_score, true_final_score)
-        #loss = 0
-        #loss = loss_final_score
-     
-        
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        accumulated_loss += loss.item()
-        if iteration % 50 == 0:
-            print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss,end="")
-          
-            print(' ')
-        iteration += 1
-    return accumulated_loss/iteration
 
 
 def test_phase(test_dataloader,criterions):
@@ -176,17 +127,7 @@ def main():
         os.mkdir(saving_dir)
         
 
-   # parameters_2_optimize = (list(model_CNN.parameters()) + list(model_my_fc6.parameters()) +
-                           #list(model_score_regressor.parameters()))
-    #parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
-                                  # list(model_score_regressor.named_parameters()))
-    """
-        for param in list(model_CNN.features.parameters())[:-39]:
-        #  print(fet," sds ",fet.parameters)
-            param.requires_grad = False
-    """
-   # model_CNN.requires_grad = False
-  #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
+
     parameters_2_optimize = [
         {'params': model_CNN.parameters(),'lr':0.00001},
         {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())}
@@ -207,64 +148,57 @@ def main():
     criterions['penalty_final_score'] = penalty_final_score
 
 
-    train_dataset = VideoDataset('train')
+   
     test_dataset = VideoDataset('test')
-    train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
+  
     test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=False)
-    print('Length of train loader: ', len(train_dataloader))
+  
     print('Length of test loader: ', len(test_dataloader))
-    print('Training set size: ', len(train_dataloader)*train_batch_size,';    Test set size: ', len(test_dataloader)*test_batch_size)
-
-    # actual training, testing loops
-    for epoch in range(initial_epoch,100):
-       # 
-        print('-------------------------------------------------------------------------------------------------------')
-        for param_group in optimizer.param_groups:
-            print('Current learning rate: ', param_group['lr'])
-
-        tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
-        ts_loss,rho=test_phase(test_dataloader,criterions)
-
-        if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
-            save_model(model_CNN, 'model_CNN', epoch, saving_dir)
-            save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
-            save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
-            save_model(optimizer,'optimizer',epoch,saving_dir)
 
 
-        print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
-        update_graph_data(epoch,tr_loss,ts_loss,rho)   
-        #draw_graph()
+  
+    print('-------------------------------------------------------------------------------------------------------')
+    for param_group in optimizer.param_groups:
+        print('Current learning rate: ', param_group['lr'])
+
+   # tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
+    ts_loss,rho=test_phase(test_dataloader,criterions)
+
+
+
+
+    print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
+  
 
 
 if __name__ == '__main__':
     # loading the altered C3D backbone (ie C3D upto before fc-6)
 
-   
+    best_model_path = #...
 
     model_CNN = build_model(scratch = False)
 
     #model_CNN_dict = model_CNN.state_dict()
 
-    if initial_epoch > 0:
-        model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
-        model_CNN.load_state_dict(model_CNN_pretrained_dict)
+ 
+    model_CNN_pretrained_dict = torch.load((os.path.join(best_model_path, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
+    model_CNN.load_state_dict(model_CNN_pretrained_dict)
     
     model_CNN = model_CNN.cuda()
 
     # loading our fc6 layer
     model_my_fc6 = fc_layer()
     #model_fc6_dict = model_my_fc6.state_dict()
-    if initial_epoch > 0:
-        model_fc6_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_my_fc6', initial_epoch-1))))  
-        model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
+
+    model_fc6_pretrained_dict = torch.load((os.path.join(best_model_path, '%s_%d.pth' % ('model_my_fc6', initial_epoch-1))))  
+    model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
     model_my_fc6.cuda()
 
     # loading our score regressor
     model_score_regressor = score_regressor()
-    if initial_epoch > 0:
-        model_score_regressor_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_score_regressor', initial_epoch-1))))
-        model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
+
+    model_score_regressor_pretrained_dict = torch.load((os.path.join(best_model_path, '%s_%d.pth' % ('model_score_regressor', initial_epoch-1))))
+    model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
     model_score_regressor = model_score_regressor.cuda()
     
     print('Using Final Score Loss')
