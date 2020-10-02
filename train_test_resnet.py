@@ -101,6 +101,7 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+     
         accumulated_loss += loss.item()
         if iteration % 50 == 0:
             print('Epoch: ', epoch, ' Iter: ', iteration, ' Loss: ', loss,end="")
@@ -193,10 +194,13 @@ def main():
     ]
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
 
+    scheduler = optim.lr_scheduler.StepLR(optimizer, 5 , gamma=0.1, last_epoch=-1, verbose=True)
+
     if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
         optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  
         optimizer.load_state_dict(optimizer_state_dic)
-
+        scheduler_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('scheduler', initial_epoch-1)))) 
+        scheduler.load_state_dict(scheduler_state_dic)
   #  print('Parameters that will be learnt: ', parameters_2_optimize_named)
     #print('training model {}'.format(model_type))
    
@@ -224,14 +228,14 @@ def main():
 
         tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
         ts_loss,rho=test_phase(test_dataloader,criterions)
+        scheduler.step()
 
         if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)
             save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
             save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
             save_model(optimizer,'optimizer',epoch,saving_dir)
-
-
+            save_model(scheduler,'scheduler',epoch,saving_dir)
         print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
         update_graph_data(epoch,tr_loss,ts_loss,rho)   
         #draw_graph()
@@ -275,4 +279,3 @@ if __name__ == '__main__':
 
 
 
-#this comment exists for my amusement 
