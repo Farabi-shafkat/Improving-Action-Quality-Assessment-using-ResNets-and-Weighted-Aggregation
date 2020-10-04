@@ -53,5 +53,5 @@ temporal_stride = 18
 
 test_only = True
 
-initial_epoch = 0 # first epoch that should run 
+initial_epoch = 11 # first epoch that should run 
 

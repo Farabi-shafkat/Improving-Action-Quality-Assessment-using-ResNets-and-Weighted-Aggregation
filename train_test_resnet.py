@@ -199,8 +199,8 @@ def main():
     if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
         optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  
         optimizer.load_state_dict(optimizer_state_dic)
-        scheduler_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('scheduler', initial_epoch-1)))) 
-        scheduler.load_state_dict(scheduler_state_dic)
+       # scheduler_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('scheduler', initial_epoch-1)))) 
+       # scheduler.load_state_dict(scheduler_state_dic)
   #  print('Parameters that will be learnt: ', parameters_2_optimize_named)
     #print('training model {}'.format(model_type))
    
@@ -235,7 +235,7 @@ def main():
             save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
             save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
             save_model(optimizer,'optimizer',epoch,saving_dir)
-            save_model(scheduler,'scheduler',epoch,saving_dir)
+           # save_model(scheduler,'scheduler',epoch,saving_dir)
         print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
         update_graph_data(epoch,tr_loss,ts_loss,rho)   
         #draw_graph()
