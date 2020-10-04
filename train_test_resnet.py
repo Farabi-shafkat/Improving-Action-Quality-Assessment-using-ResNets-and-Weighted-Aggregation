@@ -189,12 +189,12 @@ def main():
    # model_CNN.requires_grad = False
   #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
     parameters_2_optimize = [
-        {'params': model_CNN.parameters(),'lr':0.00001},
+        {'params': model_CNN.parameters(),'lr':0.000005},
         {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())}
     ]
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
 
-    scheduler = optim.lr_scheduler.StepLR(optimizer, 5 , gamma=0.1, last_epoch=-1, verbose=True)
+  #  scheduler = optim.lr_scheduler.StepLR(optimizer, 5 , gamma=0.1, last_epoch=-1, verbose=True)
 
     if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
         optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  
@@ -228,7 +228,7 @@ def main():
 
         tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
         ts_loss,rho=test_phase(test_dataloader,criterions)
-        scheduler.step()
+       # scheduler.step()
 
         if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
             save_model(model_CNN, 'model_CNN', epoch, saving_dir)

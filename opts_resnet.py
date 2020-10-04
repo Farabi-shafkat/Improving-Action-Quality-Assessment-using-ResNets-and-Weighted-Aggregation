@@ -10,8 +10,8 @@
 # }
 
 #save models
-saving_dir = '/content/drive/My Drive/resnet_basedAQA_more_fc_layers_diff_lr_diff_modules_32_frames_16_step'
-graph_save_dir = '/content/drive/My Drive/resnet_basedAQA_more_fc_layers_diff_lr_diff_modules_32_frames_16_step'
+saving_dir = '/content/drive/My Drive/resnet_basedAQA_experments_with_lr'
+graph_save_dir = saving_dir
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
 # declaring random seed
 randomseed = 0
@@ -53,5 +53,5 @@ temporal_stride = 18
 
 test_only = True
 
-initial_epoch = 6 # first epoch that should run 
+initial_epoch = 0 # first epoch that should run 
 
