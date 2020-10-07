@@ -40,6 +40,7 @@ from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 torch.backends.cudnn.deterministic=True
+torch.backends.cudnn.benchmark = False 
 
 def update_graph_data(epoch,tr_loss,ts_loss,rho):
     path = os.path.join(graph_save_dir,'graph_data.npy')
