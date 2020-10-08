@@ -35,7 +35,7 @@ from models.C3D_MC4 import C3D_MC4
 from models.ig65_resnet2.fc_layer import fc_layer
 from models.ig65_resnet2.regressor import score_regressor
 from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
-form models.ig65_resnet2.attention_scores import attention_scores
+from models.ig65_resnet2.attention_scores import attention_scores
 
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
@@ -81,22 +81,22 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
             clip_feats_temp = model_my_fc6(clip_feats_cnn)
             att_score_temp = model_attention_scores(clip_feats_temp)
             
-            clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
-            att_score_temp.unsqueeze_(2)
+            clip_feats_temp=clip_feats_temp.unsqueeze(2)  ## none X 512 X 1
+            att_score_temp=att_score_temp.unsqueeze(2)
             
             clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-            att_scores = torch.cat((tt_scores, att_score_temp), 2)
+            att_scores = torch.cat((att_scores, att_score_temp), 2)
 
-        soft_max = torch.nn.Softmax(dim=2)
-        att_scores = soft_max(att_scores)
-        clip_feats = clip_feats * att_scores
-        clip_feats_avg = clip_feats.sum(2)  ##none X512
+       # soft_max = torch.nn.Softmax(dim=2)
+       # att_scores = soft_max(att_scores)
+        #clip_feats = clip_feats * att_scores
+        #clip_feats_avg = clip_feats.sum(2)  ##none X512
         #clip_feats_avg = clip_feats.mean(1)
 
         #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
         #print(difficulty)
         #print(model_score_regressor(clip_feats_avg))
-        pred_final_score = difficulty*model_score_regressor(clip_feats_avg)
+        pred_final_score = difficulty*model_score_regressor(clip_feats,att_scores)
         
 
         loss = criterion_final_score(pred_final_score, true_final_score) + penalty_final_score(pred_final_score, true_final_score)
@@ -150,20 +150,21 @@ def test_phase(test_dataloader,criterions):
                 att_score_temp.unsqueeze_(2)
                 #clip_feats_temp.transpose_(0, 1)
                 clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-                att_scores = torch.cat((tt_scores, att_score_temp), 2)
+                att_scores = torch.cat((att_scores, att_score_temp), 2)
 
 
-            soft_max = torch.nn.Softmax(dim=2)
-            att_scores = soft_max(att_scores)
-            clip_feats = clip_feats * att_scores
-            clip_feats_avg = clip_feats.sum(2)
+         #   soft_max = torch.nn.Softmax(dim=2).cuda()
+         #   soft_max.train()
+        #    att_scores = soft_max(att_scores)
+         #   clip_feats = clip_feats * att_scores
+          #  clip_feats_avg = clip_feats.sum(2)
             # clip_feats_avg = clip_feats.mean(2)  ##none X512
             #clip_feats_avg = clip_feats.mean(1)
 
             #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
             #print(difficulty)
             #print(model_score_regressor(clip_feats_avg))
-            temp_final_score = difficulty*model_score_regressor(clip_feats_avg)
+            temp_final_score = difficulty*model_score_regressor(clip_feats,att_scores)
             #temp_final_score = model_score_regressor(sample_feats_fc6)
             pred_scores.extend([element[0] for element in temp_final_score.data.cpu().numpy()])
 
@@ -202,8 +203,8 @@ def main():
    # model_CNN.requires_grad = False
   #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
     parameters_2_optimize = [
-        {'params': model_CNN.parameters(),'lr':0.000005},
-        {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters()+list(model_attention_scores))}
+        {'params': model_CNN.parameters(),'lr':0.00001},
+        {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())+list(model_attention_scores.parameters())}
     ]
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
 
@@ -290,7 +291,7 @@ if __name__ == '__main__':
         model_attention_scores_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_attention_scores', initial_epoch-1))))
         model_attention_scores.load_state_dict(model_attention_scores_pretrained_dict)
 
-
+    model_attention_scores.cuda()
     print('Using Final Score Loss')
 
 
