@@ -35,12 +35,12 @@ from models.C3D_MC4 import C3D_MC4
 from models.ig65_resnet2.fc_layer import fc_layer
 from models.ig65_resnet2.regressor import score_regressor
 from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
-
+form models.ig65_resnet2.attention_scores import attention_scores
 
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 torch.backends.cudnn.deterministic=True
-torch.backends.cudnn.benchmark = False 
+#torch.backends.cudnn.benchmark = False 
 
 def update_graph_data(epoch,tr_loss,ts_loss,rho):
     path = os.path.join(graph_save_dir,'graph_data.npy')
@@ -64,7 +64,7 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
     model_CNN.train()
     model_my_fc6.train()
     model_score_regressor.train()
- 
+    model_attention_scores.train()
 
     iteration = 0
     for data in train_dataloader:
@@ -74,18 +74,23 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
 
         batch_size, C, frames, H, W = video.shape
         clip_feats = torch.Tensor([]).cuda()
-
+        att_scores = torch.Tensor([]).cuda()
         for i in np.arange(0, frames - 31,32):
-                clip = video[:, :, i:i + 32, :, :]
-                clip_feats_cnn = model_CNN(clip)   ## none X 512
-                clip_feats_temp = model_my_fc6(clip_feats_cnn)
-                
-                clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
+            clip = video[:, :, i:i + 32, :, :]
+            clip_feats_cnn = model_CNN(clip)   ## none X 512
+            clip_feats_temp = model_my_fc6(clip_feats_cnn)
+            att_score_temp = model_attention_scores(clip_feats_temp)
+            
+            clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
+            att_score_temp.unsqueeze_(2)
+            
+            clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+            att_scores = torch.cat((tt_scores, att_score_temp), 2)
 
-                #clip_feats_temp.transpose_(0, 1)
-                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-
-        clip_feats_avg = clip_feats.mean(2)  ##none X512
+        soft_max = torch.nn.Softmax(dim=2)
+        att_scores = soft_max(att_scores)
+        clip_feats = clip_feats * att_scores
+        clip_feats_avg = clip_feats.sum(2)  ##none X512
         #clip_feats_avg = clip_feats.mean(1)
 
         #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
@@ -124,6 +129,7 @@ def test_phase(test_dataloader,criterions):
         model_CNN.eval()
         model_my_fc6.eval()
         model_score_regressor.eval()
+        model_attention_scores.eval()
 
         iteration = 0
         for data in test_dataloader:
@@ -136,16 +142,22 @@ def test_phase(test_dataloader,criterions):
             clip_feats = torch.Tensor([]).cuda()
 
             for i in np.arange(0, frames - 31,32):
-                    clip = video[:, :, i:i + 32, :, :]
-                    clip_feats_cnn = model_CNN(clip)   ## none X 512
-                    clip_feats_temp = model_my_fc6(clip_feats_cnn)
-                    
-                    clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
+                clip = video[:, :, i:i + 32, :, :]
+                clip_feats_cnn = model_CNN(clip)   ## none X 512
+                clip_feats_temp = model_my_fc6(clip_feats_cnn)
+                att_score_temp = model_attention_scores(clip_feats_temp)
+                clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
+                att_score_temp.unsqueeze_(2)
+                #clip_feats_temp.transpose_(0, 1)
+                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+                att_scores = torch.cat((tt_scores, att_score_temp), 2)
 
-                    #clip_feats_temp.transpose_(0, 1)
-                    clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
 
-            clip_feats_avg = clip_feats.mean(2)  ##none X512
+            soft_max = torch.nn.Softmax(dim=2)
+            att_scores = soft_max(att_scores)
+            clip_feats = clip_feats * att_scores
+            clip_feats_avg = clip_feats.sum(2)
+            # clip_feats_avg = clip_feats.mean(2)  ##none X512
             #clip_feats_avg = clip_feats.mean(1)
 
             #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
@@ -176,7 +188,7 @@ def main():
         os.mkdir(graph_save_dir)
     if not os.path.exists(saving_dir):
         os.mkdir(saving_dir)
-        
+    
 
    # parameters_2_optimize = (list(model_CNN.parameters()) + list(model_my_fc6.parameters()) +
                            #list(model_score_regressor.parameters()))
@@ -191,7 +203,7 @@ def main():
   #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
     parameters_2_optimize = [
         {'params': model_CNN.parameters(),'lr':0.000005},
-        {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())}
+        {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters()+list(model_attention_scores))}
     ]
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
 
@@ -236,6 +248,7 @@ def main():
             save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
             save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
             save_model(optimizer,'optimizer',epoch,saving_dir)
+            save_model(model_attention_scores,'model_attention_scores',epoch,saving_dir)
            # save_model(scheduler,'scheduler',epoch,saving_dir)
         print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
         update_graph_data(epoch,tr_loss,ts_loss,rho)   
@@ -272,6 +285,12 @@ if __name__ == '__main__':
         model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
     model_score_regressor = model_score_regressor.cuda()
     
+    model_attention_scores = attention_scores()
+    if initial_epoch > 0:
+        model_attention_scores_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_attention_scores', initial_epoch-1))))
+        model_attention_scores.load_state_dict(model_attention_scores_pretrained_dict)
+
+
     print('Using Final Score Loss')
 
 

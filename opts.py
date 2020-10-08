@@ -10,7 +10,7 @@
 # }
 
 #save models
-saving_dir = '/content/drive/My Drive/model_0.93_withdropout0.2'
+saving_dir = '/content/drive/My Drive/model_with_att'
 graph_save_dir = saving_dir
 
 pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
