@@ -10,7 +10,7 @@
 # }
 
 #save models
-saving_dir = '/content/drive/My Drive/resnet_basedAQA_experments_with_lr'
+saving_dir = '/content/drive/My Drive/model_with_att'
 graph_save_dir = saving_dir
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
 # declaring random seed
@@ -18,7 +18,7 @@ randomseed = 0
 
 # directory containing dataset annotation files; this anno_n_splits_dir make the full path
 dataset_dir = '/content/dataset'
-
+dataset_name = 'MTLAQA' # MTLAQA or AQA7
 # directory tp store train/test split lists and annotations
 anno_n_splits_dir = dataset_dir + '/Ready_2_Use/MTL-AQA_split_0_data'
 
@@ -53,5 +53,5 @@ temporal_stride = 18
 
 test_only = True
 
-initial_epoch = 11 # first epoch that should run 
+initial_epoch = 0 # first epoch that should run 
 

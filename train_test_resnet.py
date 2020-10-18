@@ -13,6 +13,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from dataloaders.dataloader_C3DAVG import VideoDataset
+from dataloaders.dataloader_aqa_7 import VideoDataset_aqa7
 import random
 import scipy.stats as stats
 import torch.optim as optim
@@ -69,7 +70,9 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
     iteration = 0
     for data in train_dataloader:
         true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
-        difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
+        difficulty = 1 
+        if dataset_name=='MTL_AQA':
+            difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
         video = data['video'].transpose_(1, 2).cuda()
 
         batch_size, C, frames, H, W = video.shape
@@ -135,12 +138,14 @@ def test_phase(test_dataloader,criterions):
         for data in test_dataloader:
             true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
             true_scores.extend(data['label_final_score'].data.numpy())
-            difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
+            difficulty = 1 
+            if dataset_name=='MTL_AQA':
+                difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
             video = data['video'].transpose_(1, 2).cuda()
 
             batch_size, C, frames, H, W = video.shape
             clip_feats = torch.Tensor([]).cuda()
-
+            att_scores = torch.Tensor([]).cuda()
             for i in np.arange(0, frames - 31,32):
                 clip = video[:, :, i:i + 32, :, :]
                 clip_feats_cnn = model_CNN(clip)   ## none X 512
@@ -204,7 +209,8 @@ def main():
   #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
     parameters_2_optimize = [
         {'params': model_CNN.parameters(),'lr':0.00001},
-        {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())+list(model_attention_scores.parameters())}
+        {'params': model_attention_scores, 'lr':0.00001},
+        {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())}
     ]
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
 
@@ -224,9 +230,15 @@ def main():
     criterions['criterion_final_score'] = criterion_final_score
     criterions['penalty_final_score'] = penalty_final_score
 
-
-    train_dataset = VideoDataset('train')
-    test_dataset = VideoDataset('test')
+    
+    train_dataset = None 
+    test_dataset = None 
+    if dataset_name == 'MTLAQA':
+        train_dataset = VideoDataset('train')
+        test_dataset = VideoDataset('test')
+    elif dataset_name == 'AQA7':
+        train_dataset = VideoDataset_aqa7('train')
+        test_dataset = VideoDataset_aqa7('test')     
     train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=False)
     print('Length of train loader: ', len(train_dataloader))

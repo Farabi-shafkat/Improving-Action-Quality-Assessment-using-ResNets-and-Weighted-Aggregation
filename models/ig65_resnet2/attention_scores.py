@@ -15,10 +15,10 @@ class attention_scores(nn.Module):
         self.fc3 = nn.Linear(32,64)
         self.fc4 = nn.Linear(64,128)
         self.relu = nn.ReLU()
-
+        self.dropout = nn.Dropout(p=0.1)
     def forward(self,x):
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.relu(self.fc3(x))
+        x = self.dropout(self.relu(self.fc1(x)))
+        x = self.dropout(self.relu(self.fc2(x)))
+        x = self.dropout(self.relu(self.fc3(x)))
         x = self.fc4(x)
         return x
