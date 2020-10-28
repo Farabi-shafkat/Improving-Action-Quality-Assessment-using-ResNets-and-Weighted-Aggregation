@@ -78,8 +78,8 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
         batch_size, C, frames, H, W = video.shape
         clip_feats = torch.Tensor([]).cuda()
         att_scores = torch.Tensor([]).cuda()
-        for i in np.arange(0, frames - 31,32):
-            clip = video[:, :, i:i + 32, :, :]
+        for i in np.arange(0, frames - clip_size+1,clip_size):
+            clip = video[:, :, i:i + clip_size, :, :]
             clip_feats_cnn = model_CNN(clip)   ## none X 512
             clip_feats_temp = model_my_fc6(clip_feats_cnn)
             att_score_temp = model_attention_scores(clip_feats_temp)
@@ -146,8 +146,8 @@ def test_phase(test_dataloader,criterions):
             batch_size, C, frames, H, W = video.shape
             clip_feats = torch.Tensor([]).cuda()
             att_scores = torch.Tensor([]).cuda()
-            for i in np.arange(0, frames - 31,32):
-                clip = video[:, :, i:i + 32, :, :]
+            for i in np.arange(0, frames - clip_size+1,clip_size):
+                clip = video[:, :, i:i + clip_size, :, :]
                 clip_feats_cnn = model_CNN(clip)   ## none X 512
                 clip_feats_temp = model_my_fc6(clip_feats_cnn)
                 att_score_temp = model_attention_scores(clip_feats_temp)
@@ -273,7 +273,7 @@ if __name__ == '__main__':
 
    
 
-    model_CNN = build_model(scratch = False)
+    model_CNN = build_model(pretrained=True,type = feature_extractor)
 
     #model_CNN_dict = model_CNN.state_dict()
 

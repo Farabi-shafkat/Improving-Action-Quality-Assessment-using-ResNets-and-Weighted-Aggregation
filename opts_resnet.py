@@ -9,6 +9,9 @@
 #   year={2019}
 # }
 
+feature_extractor = 'resnet2+1d_32' #options are: 'resnet2+1d_32' 'resnet2+1d_16' 'resnet2+1d_8' 'resnet3d....'
+clip_size = 32
+
 #save models
 saving_dir = '/content/drive/My Drive/model_with_att'
 graph_save_dir = saving_dir
@@ -55,3 +58,9 @@ test_only = True
 
 initial_epoch = 0 # first epoch that should run 
 
+num2action = {1: diving_dir,
+              2: gymvault_dir,
+              3: ski_dir,
+              4: snowb_dir,
+              5: sync3m_dir,
+              6: sync10m_dir}
