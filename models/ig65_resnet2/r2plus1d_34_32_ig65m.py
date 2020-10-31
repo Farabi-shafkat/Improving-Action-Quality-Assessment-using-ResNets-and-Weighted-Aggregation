@@ -19,13 +19,13 @@ class custom(nn.Module):
         #x = self.dropout(self.relu(self.fc(x)))
         return x
 
-def build_model(pretrained = True):
+def build_model(ex_type,pretrained = True):
     if pretrained == True:
         print('using pretrained weights from moabitcoin/ig65m-pytorch repo')
     model = None
-    if feature_extractor == 'resnet2+1d_32'
+    if ex_type == 'resnet2+1d_32':
         model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_32_kinetics", num_classes=400, pretrained=pretrained)
-    elif feature_extractor == 'resnet2+1d_8'
+    elif ex_type == 'resnet2+1d_8':
         model = torch.hub.load("moabitcoin/ig65m-pytorch", "r2plus1d_34_8_kinetics", num_classes=400, pretrained=pretrained)
     custom_model = custom(model)
     return custom_model

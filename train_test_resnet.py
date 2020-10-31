@@ -19,25 +19,18 @@ import scipy.stats as stats
 import torch.optim as optim
 import torch.nn as nn
 #from models.C3DAVG.C3D_altered import C3D_altered
-from models.C3D_MC5 import C3D_MC5
-from models.C3DAVG.my_fc6 import my_fc6
-from models.C3DAVG.score_regressor import score_regressor
-from models.C3DAVG.dive_classifier import dive_classifier
-from models.C3DAVG.S2VTModel import S2VTModel
+
 from opts_resnet import *
 from utils import utils_1
 import numpy as np
 from make_graph import draw_graph
-from models.C3DAVG.C3D_altered import C3D_altered
-from models.C3D_MC5 import C3D_MC5
-from models.c3d_seperable_batch_norm import C3D_SP
-from models.C3D_MC3 import C3D_MC3
-from models.C3D_MC4 import C3D_MC4
+
 from models.ig65_resnet2.fc_layer import fc_layer
 from models.ig65_resnet2.regressor import score_regressor
 from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
 from models.ig65_resnet2.attention_scores import attention_scores
-
+from models.ig65_resnet2.resnet(2+1)d import build_model as resnet2p1d_build_model
+from models.ig65_resnet2.resnet3d import build_model as resnet3d_build_model
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 torch.backends.cudnn.deterministic=True
@@ -82,13 +75,21 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
             clip = video[:, :, i:i + clip_size, :, :]
             clip_feats_cnn = model_CNN(clip)   ## none X 512
             clip_feats_temp = model_my_fc6(clip_feats_cnn)
-            att_score_temp = model_attention_scores(clip_feats_temp)
+            
             
             clip_feats_temp=clip_feats_temp.unsqueeze(2)  ## none X 512 X 1
-            att_score_temp=att_score_temp.unsqueeze(2)
+            
             
             clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-            att_scores = torch.cat((att_scores, att_score_temp), 2)
+            
+            if with_weight:
+                att_score_temp = model_attention_scores(clip_feats_temp)
+                att_score_temp=att_score_temp.unsqueeze(2)
+                att_scores = torch.cat((att_scores, att_score_temp), 2)
+            else:
+                att_score_temp = torch.ones_like(clip_feats_temp)
+                att_score_temp=att_score_temp.unsqueeze(2)
+                att_scores = torch.cat((att_scores, att_score_temp), 2)
 
        # soft_max = torch.nn.Softmax(dim=2)
        # att_scores = soft_max(att_scores)
@@ -150,12 +151,21 @@ def test_phase(test_dataloader,criterions):
                 clip = video[:, :, i:i + clip_size, :, :]
                 clip_feats_cnn = model_CNN(clip)   ## none X 512
                 clip_feats_temp = model_my_fc6(clip_feats_cnn)
-                att_score_temp = model_attention_scores(clip_feats_temp)
-                clip_feats_temp.unsqueeze_(2)  ## none X 512 X 1
-                att_score_temp.unsqueeze_(2)
-                #clip_feats_temp.transpose_(0, 1)
+                
+                
+                clip_feats_temp=clip_feats_temp.unsqueeze(2)  ## none X 512 X 1
+                
+                
                 clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-                att_scores = torch.cat((att_scores, att_score_temp), 2)
+                
+                if with_weight:
+                    att_score_temp = model_attention_scores(clip_feats_temp)
+                    att_score_temp=att_score_temp.unsqueeze(2)
+                    att_scores = torch.cat((att_scores, att_score_temp), 2)
+                else:
+                    att_score_temp = torch.ones_like(clip_feats_temp)
+                    att_score_temp=att_score_temp.unsqueeze(2)
+                    att_scores = torch.cat((att_scores, att_score_temp), 2)
 
 
          #   soft_max = torch.nn.Softmax(dim=2).cuda()
@@ -209,7 +219,7 @@ def main():
   #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
     parameters_2_optimize = [
         {'params': model_CNN.parameters(),'lr':0.00001},
-        {'params': model_attention_scores, 'lr':0.00001},
+        {'params': model_attention_scores.parameters(), 'lr':0.00001},
         {'params': list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())}
     ]
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
@@ -272,9 +282,16 @@ if __name__ == '__main__':
     # loading the altered C3D backbone (ie C3D upto before fc-6)
 
    
-
-    model_CNN = build_model(pretrained=True,type = feature_extractor)
-
+    model_CNN = None
+    if feature_extractor == 'resnet2+1dig':
+        assert depth==34 
+        model_CNN = build_model(pretrained=True,ex_type = feature_extractor[0:-2]+'_{}'.format(clip_size))
+    elif feature_extractor == 'resnet2+1d':
+        assert clip_size==16
+        model_CNN = resnet2p1d_build_model(depth)
+    elif feature_extractor == 'resnet3d':
+        assert clip_size==16
+        model_CNN = resnet3d_build_model(depth)
     #model_CNN_dict = model_CNN.state_dict()
 
     if initial_epoch > 0:
@@ -298,12 +315,15 @@ if __name__ == '__main__':
         model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
     model_score_regressor = model_score_regressor.cuda()
     
-    model_attention_scores = attention_scores()
-    if initial_epoch > 0:
-        model_attention_scores_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_attention_scores', initial_epoch-1))))
-        model_attention_scores.load_state_dict(model_attention_scores_pretrained_dict)
 
-    model_attention_scores.cuda()
+    model_attention_scores = None
+    if with_weight:
+        model_attention_scores = attention_scores()
+        if initial_epoch > 0:
+            model_attention_scores_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_attention_scores', initial_epoch-1))))
+            model_attention_scores.load_state_dict(model_attention_scores_pretrained_dict)
+
+        model_attention_scores.cuda()
     print('Using Final Score Loss')
 
 

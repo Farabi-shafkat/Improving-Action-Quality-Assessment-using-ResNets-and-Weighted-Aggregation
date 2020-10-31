@@ -9,13 +9,15 @@
 #   year={2019}
 # }
 
-feature_extractor = 'resnet2+1d_32' #options are: 'resnet2+1d_32' 'resnet2+1d_16' 'resnet2+1d_8' 'resnet3d....'
-clip_size = 32
-
+feature_extractor = 'resnet2+1d' #options are: 'resnet2+1d 'resnet3d' 'resnet2+1dig'
+depth = 34
+clip_size = 8
+with_weight = True
 #save models
-saving_dir = '/content/drive/My Drive/model_with_att'
+saving_dir = '/content/drive/My Drive/thesis/resnet(2+1)_34_8_with_weight_avg'
 graph_save_dir = saving_dir
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
+pretrained_weights_dir = ...
 # declaring random seed
 randomseed = 0
 
@@ -57,10 +59,10 @@ temporal_stride = 18
 test_only = True
 
 initial_epoch = 0 # first epoch that should run 
-
+"""
 num2action = {1: diving_dir,
               2: gymvault_dir,
               3: ski_dir,
               4: snowb_dir,
               5: sync3m_dir,
-              6: sync10m_dir}
+              6: sync10m_dir}"""
