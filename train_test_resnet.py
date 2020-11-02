@@ -29,7 +29,7 @@ from models.ig65_resnet2.fc_layer import fc_layer
 from models.ig65_resnet2.regressor import score_regressor
 from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
 from models.ig65_resnet2.attention_scores import attention_scores
-from models.ig65_resnet2.resnet(2+1)d import build_model as resnet2p1d_build_model
+from models.ig65_resnet2.resnet2p1d import build_model as resnet2p1d_build_model
 from models.ig65_resnet2.resnet3d import build_model as resnet3d_build_model
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
@@ -77,19 +77,23 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
             clip_feats_temp = model_my_fc6(clip_feats_cnn)
             
             
-            clip_feats_temp=clip_feats_temp.unsqueeze(2)  ## none X 512 X 1
-            
-            
-            clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
-            
+
             if with_weight:
                 att_score_temp = model_attention_scores(clip_feats_temp)
+
                 att_score_temp=att_score_temp.unsqueeze(2)
                 att_scores = torch.cat((att_scores, att_score_temp), 2)
             else:
                 att_score_temp = torch.ones_like(clip_feats_temp)
                 att_score_temp=att_score_temp.unsqueeze(2)
                 att_scores = torch.cat((att_scores, att_score_temp), 2)
+            
+            clip_feats_temp=clip_feats_temp.unsqueeze(2)  ## none X 512 X 1
+            
+            
+            clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+            
+            #print(clip_feats_temp.shape)
 
        # soft_max = torch.nn.Softmax(dim=2)
        # att_scores = soft_max(att_scores)
@@ -153,10 +157,7 @@ def test_phase(test_dataloader,criterions):
                 clip_feats_temp = model_my_fc6(clip_feats_cnn)
                 
                 
-                clip_feats_temp=clip_feats_temp.unsqueeze(2)  ## none X 512 X 1
-                
-                
-                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
+
                 
                 if with_weight:
                     att_score_temp = model_attention_scores(clip_feats_temp)
@@ -166,7 +167,12 @@ def test_phase(test_dataloader,criterions):
                     att_score_temp = torch.ones_like(clip_feats_temp)
                     att_score_temp=att_score_temp.unsqueeze(2)
                     att_scores = torch.cat((att_scores, att_score_temp), 2)
-
+                
+                
+                clip_feats_temp=clip_feats_temp.unsqueeze(2)  ## none X 512 X 1
+            
+            
+                clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
 
          #   soft_max = torch.nn.Softmax(dim=2).cuda()
          #   soft_max.train()

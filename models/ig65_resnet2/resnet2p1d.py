@@ -1,10 +1,10 @@
 import math
 from functools import partial
-
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from opts import *
+from opts_resnet import *
 
 def get_inplanes():
     return [64, 128, 256, 512]
@@ -307,7 +307,7 @@ def build_model(depth,pretrained = True):
 
 
     model = generate_model(model_depth=depth,
-                            n_classes=400,
+                            n_classes=700,
                             n_input_channels=3,
                             shortcut_type='B',
                             conv1_t_size=7,
@@ -315,7 +315,7 @@ def build_model(depth,pretrained = True):
                             no_max_pool=False,
                             widen_factor=1.0)
     if pretrained: 
-        pretrained_dict = torch.load(os.path.join(pretrained_weights_dir,'r2p1d{}_k_200ep.pt'.format(depth)))  
+        pretrained_dict = torch.load(os.path.join(pretrained_weights_dir,'r2p1d{}_K_200ep.pth'.format(depth)))['state_dict']
         model.load_state_dict(pretrained_dict)
     custom_model = custom(model)
     return custom_model

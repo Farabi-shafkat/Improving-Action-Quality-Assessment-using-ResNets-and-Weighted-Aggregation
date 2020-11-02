@@ -11,13 +11,13 @@
 
 feature_extractor = 'resnet2+1d' #options are: 'resnet2+1d 'resnet3d' 'resnet2+1dig'
 depth = 34
-clip_size = 8
+clip_size = 16
 with_weight = True
 #save models
-saving_dir = '/content/drive/My Drive/thesis/resnet(2+1)_34_8_with_weight_avg'
+saving_dir = '/content/drive/My Drive/thesis/diff_resnets_sanity check'
 graph_save_dir = saving_dir
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
-pretrained_weights_dir = ...
+pretrained_weights_dir = '/content/drive/My Drive/thesis/kenshohara_weights_my_copy'
 # declaring random seed
 randomseed = 0
 
