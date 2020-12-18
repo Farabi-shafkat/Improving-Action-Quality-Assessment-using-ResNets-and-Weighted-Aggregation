@@ -9,12 +9,12 @@
 #   year={2019}
 # }
 
-feature_extractor = 'resnet2+1d' #options are: 'resnet2+1d 'resnet3d' 'resnet2+1dig'
+feature_extractor = 'resnet3d' #options are: 'resnet2+1d 'resnet3d' 'resnet2+1dig'
 depth = 34
 clip_size = 16
 with_weight = True
 #save models
-saving_dir = '/content/drive/My Drive/thesis/diff_resnets_sanity check'
+saving_dir = '/content/drive/My Drive/thesis/3d_resnet_34'
 graph_save_dir = saving_dir
 #pre_trained_weight_dir = '/content/drive/My Drive/Trained_Models/C3D-AVG-MTL'
 pretrained_weights_dir = '/content/drive/My Drive/thesis/kenshohara_weights_my_copy'
@@ -58,7 +58,7 @@ temporal_stride = 18
 
 test_only = True
 
-initial_epoch = 0 # first epoch that should run 
+initial_epoch = 26 # first epoch that should run 
 """
 num2action = {1: diving_dir,
               2: gymvault_dir,
