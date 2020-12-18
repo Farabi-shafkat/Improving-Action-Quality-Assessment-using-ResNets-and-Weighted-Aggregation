@@ -31,6 +31,7 @@ from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
 from models.ig65_resnet2.attention_scores import attention_scores
 from models.ig65_resnet2.resnet2p1d import build_model as resnet2p1d_build_model
 from models.ig65_resnet2.resnet3d import build_model as resnet3d_build_model
+from models.ig65_resnet2.resnet50_2p1d_32 import build_model as resnet50_2p1d_32_build_model
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
 torch.backends.cudnn.deterministic=True
@@ -277,7 +278,8 @@ def main():
             save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
             save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
             save_model(optimizer,'optimizer',epoch,saving_dir)
-            save_model(model_attention_scores,'model_attention_scores',epoch,saving_dir)
+            if with_weight:
+                save_model(model_attention_scores,'model_attention_scores',epoch,saving_dir)
            # save_model(scheduler,'scheduler',epoch,saving_dir)
         print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
         update_graph_data(epoch,tr_loss,ts_loss,rho)   
@@ -298,6 +300,9 @@ if __name__ == '__main__':
     elif feature_extractor == 'resnet3d':
         assert clip_size==16
         model_CNN = resnet3d_build_model(depth)
+    elif feature_extractor == 'resnet50_2p1d_32':
+        assert clip_size==32 and depth == 50
+        model_CNN = resnet50_2p1d_32_build_model(depth)
     #model_CNN_dict = model_CNN.state_dict()
 
     if initial_epoch > 0:

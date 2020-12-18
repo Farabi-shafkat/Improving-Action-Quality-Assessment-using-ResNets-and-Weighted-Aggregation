@@ -9,7 +9,7 @@
 #   year={2019}
 # }
 
-feature_extractor = 'resnet3d' #options are: 'resnet2+1d 'resnet3d' 'resnet2+1dig'
+feature_extractor = 'resnet3d' #options are: 'resnet2+1d' 'resnet3d' 'resnet2+1dig' 'resnet50_2p1d_32'
 depth = 34
 clip_size = 16
 with_weight = True
