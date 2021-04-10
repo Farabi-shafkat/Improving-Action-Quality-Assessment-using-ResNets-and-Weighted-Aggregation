@@ -268,16 +268,12 @@ def main():
     ]
     optimizer = optim.Adam(parameters_2_optimize, lr=0.0001)
 
-  #  scheduler = optim.lr_scheduler.StepLR(optimizer, 5 , gamma=0.1, last_epoch=-1, verbose=True)
+
 
     if opts_resnet.initial_epoch>0 and os.path.exists((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('optimizer',opts_resnet.initial_epoch-1)))):
         optimizer_state_dic =  torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('optimizer', opts_resnet.initial_epoch-1))))  
-        optimizer.load_state_dict(optimizer_state_dic)
-       # scheduler_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('scheduler', initial_epoch-1)))) 
-       # scheduler.load_state_dict(scheduler_state_dic)
-  #  print('Parameters that will be learnt: ', parameters_2_optimize_named)
-    #print('training model {}'.format(model_type))
-   
+
+
     criterions = {}
     criterion_final_score = nn.MSELoss()
     penalty_final_score = nn.L1Loss()
