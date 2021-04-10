@@ -18,9 +18,10 @@ import random
 import scipy.stats as stats
 import torch.optim as optim
 import torch.nn as nn
+import argparse as arg
 #from models.C3DAVG.C3D_altered import C3D_altered
 
-from opts_resnet import *
+import opts_resnet 
 from utils import utils_1
 import numpy as np
 from make_graph import draw_graph
@@ -33,21 +34,25 @@ from models.ig65_resnet2.resnet2p1d import build_model as resnet2p1d_build_model
 from models.ig65_resnet2.resnet3d import build_model as resnet3d_build_model
 from models.ig65_resnet2.resnet50_2p1d_32 import build_model as resnet50_2p1d_32_build_model
 
-torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
+torch.manual_seed(opts_resnet.randomseed); torch.cuda.manual_seed_all(opts_resnet.randomseed); random.seed(opts_resnet.randomseed); np.random.seed(opts_resnet.randomseed)
 torch.backends.cudnn.deterministic=True
 #torch.backends.cudnn.benchmark = False 
 
-def update_graph_data(epoch,tr_loss,ts_loss,rho):
-    path = os.path.join(graph_save_dir,'graph_data.npy')
+
+def update_graph_data(epoch,tr_loss,ts_loss,rho,action_rho):
+    opts_resnet.graph_save_dir = opts_resnet.graph_save_dir.format(opts_resnet.train_action)
+    print('saving grapg data at ',opts_resnet.graph_save_dir)
+    path = os.path.join(opts_resnet.graph_save_dir,'graph_data_{}.npy'.format(opts_resnet.train_action))
     if epoch==0 :
-        graph_data = np.array([[tr_loss],[ts_loss],[rho]])
+        graph_data = np.array([[tr_loss],[ts_loss],[rho] ])
     else:
-        graph_data = np.load(path)
-        graph_data = np.append( graph_data,np.array([[tr_loss],[ts_loss],[rho]]),axis= 1)
+        graph_data = np.load(path,allow_pickle=True)
+        graph_data = np.append( graph_data,[[tr_loss],[ts_loss],[rho] ],axis= 1)
 
     np.save(path,  graph_data)
 
 def save_model(model, model_name, epoch, path):
+    print('sabing {} at {}'.format(model_name,path))
     model_path = os.path.join(path, '%s_%d.pth' % (model_name, epoch))
     torch.save(model.state_dict(), model_path)
 
@@ -65,21 +70,21 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
     for data in train_dataloader:
         true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
         difficulty = 1 
-        if dataset_name=='MTL_AQA':
+        if opts_resnet.dataset_name=='MTL_AQA':
             difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
         video = data['video'].transpose_(1, 2).cuda()
 
         batch_size, C, frames, H, W = video.shape
         clip_feats = torch.Tensor([]).cuda()
         att_scores = torch.Tensor([]).cuda()
-        for i in np.arange(0, frames - clip_size+1,clip_size):
-            clip = video[:, :, i:i + clip_size, :, :]
+        for i in np.arange(0, frames - opts_resnet.clip_size+1,opts_resnet.clip_size):
+            clip = video[:, :, i:i + opts_resnet.clip_size, :, :]
             clip_feats_cnn = model_CNN(clip)   ## none X 512
             clip_feats_temp = model_my_fc6(clip_feats_cnn)
             
             
 
-            if with_weight:
+            if opts_resnet.with_weight:
                 att_score_temp = model_attention_scores(clip_feats_temp)
 
                 att_score_temp=att_score_temp.unsqueeze(2)
@@ -133,7 +138,24 @@ def test_phase(test_dataloader,criterions):
 
     with torch.no_grad():
         pred_scores = []; true_scores = []
-
+        """action_wise_scores_prediction={
+            
+            1:[],
+            2:[],
+            3:[],
+            4:[],
+            5:[],
+            6:[]
+        }
+        action_wise_scores_true={
+            
+            1:[],
+            2:[],
+            3:[],
+            4:[],
+            5:[],
+            6:[]
+        }"""
 
         model_CNN.eval()
         model_my_fc6.eval()
@@ -143,24 +165,27 @@ def test_phase(test_dataloader,criterions):
         iteration = 0
         for data in test_dataloader:
             true_final_score = data['label_final_score'].unsqueeze_(1).type(torch.FloatTensor).cuda()
+            
+           #for act,sc in zip(data['action'].data.numpy(),data['label_final_score'].data.numpy()):
+            #    action_wise_scores_true[act].append(sc)
             true_scores.extend(data['label_final_score'].data.numpy())
             difficulty = 1 
-            if dataset_name=='MTL_AQA':
+            if opts_resnet.dataset_name=='MTL_AQA':
                 difficulty = data['DD'].unsqueeze_(1).type(torch.FloatTensor).cuda()
             video = data['video'].transpose_(1, 2).cuda()
 
             batch_size, C, frames, H, W = video.shape
             clip_feats = torch.Tensor([]).cuda()
             att_scores = torch.Tensor([]).cuda()
-            for i in np.arange(0, frames - clip_size+1,clip_size):
-                clip = video[:, :, i:i + clip_size, :, :]
+            for i in np.arange(0, frames - opts_resnet.clip_size+1,opts_resnet.clip_size):
+                clip = video[:, :, i:i + opts_resnet.clip_size, :, :]
                 clip_feats_cnn = model_CNN(clip)   ## none X 512
                 clip_feats_temp = model_my_fc6(clip_feats_cnn)
                 
                 
 
                 
-                if with_weight:
+                if opts_resnet.with_weight:
                     att_score_temp = model_attention_scores(clip_feats_temp)
                     att_score_temp=att_score_temp.unsqueeze(2)
                     att_scores = torch.cat((att_scores, att_score_temp), 2)
@@ -189,8 +214,9 @@ def test_phase(test_dataloader,criterions):
             temp_final_score = difficulty*model_score_regressor(clip_feats,att_scores)
             #temp_final_score = model_score_regressor(sample_feats_fc6)
             pred_scores.extend([element[0] for element in temp_final_score.data.cpu().numpy()])
-
-                
+         
+            #for act,sc in zip(data['action'].data.numpy(),[element[0] for element in temp_final_score.data.cpu().numpy()]):
+            #    action_wise_scores_prediction[act].append(sc)
             loss = criterion_final_score(temp_final_score, true_final_score)+ penalty_final_score(temp_final_score, true_final_score)
           #  loss = 0
           #  loss += loss_final_score
@@ -201,16 +227,27 @@ def test_phase(test_dataloader,criterions):
         rho, p = stats.spearmanr(pred_scores, true_scores)
         print('Predicted scores: ', pred_scores)
         print('True scores: ', true_scores)
-        print('Correlation: ', rho)
-        return (accumulated_loss/iteration,rho)
+        print('Correlation : ', rho)
+
+       # print("action wise correlation..............")
+        #action_rho = []
+        #for key in range(1,7):
+            #ro,_  = stats.spearmanr(action_wise_scores_prediction[key], action_wise_scores_true[key])
+        #    action_rho.append(ro)
+         #   print("Action {}: {}".format(key,ro))
+
+
+
+
+        return (accumulated_loss/iteration,rho,rho)
 
 
 def main():
 
-    if not os.path.exists(graph_save_dir):
-        os.mkdir(graph_save_dir)
-    if not os.path.exists(saving_dir):
-        os.mkdir(saving_dir)
+    if not os.path.exists(opts_resnet.graph_save_dir):
+        os.mkdir(opts_resnet.graph_save_dir)
+    if not os.path.exists(opts_resnet.saving_dir):
+        os.mkdir(opts_resnet.saving_dir)
     
 
    # parameters_2_optimize = (list(model_CNN.parameters()) + list(model_my_fc6.parameters()) +
@@ -233,8 +270,8 @@ def main():
 
   #  scheduler = optim.lr_scheduler.StepLR(optimizer, 5 , gamma=0.1, last_epoch=-1, verbose=True)
 
-    if initial_epoch>0 and os.path.exists((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1)))):
-        optimizer_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('optimizer', initial_epoch-1))))  
+    if opts_resnet.initial_epoch>0 and os.path.exists((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('optimizer',opts_resnet.initial_epoch-1)))):
+        optimizer_state_dic =  torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('optimizer', opts_resnet.initial_epoch-1))))  
         optimizer.load_state_dict(optimizer_state_dic)
        # scheduler_state_dic =  torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('scheduler', initial_epoch-1)))) 
        # scheduler.load_state_dict(scheduler_state_dic)
@@ -250,63 +287,68 @@ def main():
     
     train_dataset = None 
     test_dataset = None 
-    if dataset_name == 'MTLAQA':
+    if opts_resnet.dataset_name == 'MTLAQA':
         train_dataset = VideoDataset('train')
         test_dataset = VideoDataset('test')
-    elif dataset_name == 'AQA7':
-        train_dataset = VideoDataset_aqa7('train')
-        test_dataset = VideoDataset_aqa7('test')     
-    train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=False)
+    elif opts_resnet.dataset_name == 'AQA7':
+        train_dataset = VideoDataset_aqa7('train',opts_resnet.train_action)
+        test_dataset = VideoDataset_aqa7('test',opts_resnet.train_action)     
+    train_dataloader = DataLoader(train_dataset, batch_size=opts_resnet.train_batch_size, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=opts_resnet.test_batch_size, shuffle=False)
     print('Length of train loader: ', len(train_dataloader))
     print('Length of test loader: ', len(test_dataloader))
-    print('Training set size: ', len(train_dataloader)*train_batch_size,';    Test set size: ', len(test_dataloader)*test_batch_size)
+    print('Training set size: ', len(train_dataloader)*opts_resnet.train_batch_size,';    Test set size: ', len(test_dataloader)*opts_resnet.test_batch_size)
 
     # actual training, testing loops
-    for epoch in range(initial_epoch,100):
+    for epoch in range(opts_resnet.initial_epoch,opts_resnet.max_epoch):
        # 
         print('-------------------------------------------------------------------------------------------------------')
         for param_group in optimizer.param_groups:
             print('Current learning rate: ', param_group['lr'])
 
-        tr_loss=train_phase(train_dataloader, optimizer, criterions, epoch)
-        ts_loss,rho=test_phase(test_dataloader,criterions)
+        tr_loss = train_phase(train_dataloader, optimizer, criterions, epoch)
+        ts_loss,rho,action_rho = test_phase(test_dataloader,criterions)
        # scheduler.step()
 
-        if (epoch+1) % model_ckpt_interval == 0: # save models every 5 epochs
-            save_model(model_CNN, 'model_CNN', epoch, saving_dir)
-            save_model(model_my_fc6, 'model_my_fc6', epoch, saving_dir)
-            save_model(model_score_regressor, 'model_score_regressor', epoch, saving_dir)
-            save_model(optimizer,'optimizer',epoch,saving_dir)
-            if with_weight:
-                save_model(model_attention_scores,'model_attention_scores',epoch,saving_dir)
+        if (epoch+1) % opts_resnet.model_ckpt_interval == 0: # save models every 5 epochs
+            save_model(model_CNN, 'model_CNN', epoch, opts_resnet.saving_dir)
+            save_model(model_my_fc6, 'model_my_fc6', epoch, opts_resnet.saving_dir)
+            save_model(model_score_regressor, 'model_score_regressor', epoch, opts_resnet.saving_dir)
+            save_model(optimizer,'optimizer',epoch,opts_resnet.saving_dir)
+            if opts_resnet.with_weight:
+                save_model(model_attention_scores,'model_attention_scores',epoch,opts_resnet.saving_dir)
            # save_model(scheduler,'scheduler',epoch,saving_dir)
         print("training loss: {} test loss: {} rho: {}".format(tr_loss,ts_loss,rho))
-        update_graph_data(epoch,tr_loss,ts_loss,rho)   
+        update_graph_data(epoch,tr_loss,ts_loss,rho,action_rho)   
         #draw_graph()
 
 
 if __name__ == '__main__':
     # loading the altered C3D backbone (ie C3D upto before fc-6)
-
-   
+    parser = arg.ArgumentParser()
+    parser.add_argument('--initial_epoch',type = int)
+    parser.add_argument('--train_action',type = int)
+    args = vars(parser.parse_args())
+    opts_resnet.initial_epoch = args['initial_epoch']
+    opts_resnet.train_action = args['train_action']
+    opts_resnet.saving_dir = opts_resnet.saving_dir.format(opts_resnet.train_action)
     model_CNN = None
-    if feature_extractor == 'resnet2+1dig':
-        assert depth==34 
-        model_CNN = build_model(pretrained=True,ex_type = feature_extractor[0:-2]+'_{}'.format(clip_size))
-    elif feature_extractor == 'resnet2+1d':
-        assert clip_size==16
-        model_CNN = resnet2p1d_build_model(depth)
-    elif feature_extractor == 'resnet3d':
-        assert clip_size==16
-        model_CNN = resnet3d_build_model(depth)
-    elif feature_extractor == 'resnet50_2p1d_32':
-        assert clip_size==32 and depth == 50
-        model_CNN = resnet50_2p1d_32_build_model(depth)
+    if opts_resnet.feature_extractor == 'resnet2+1dig':
+        assert opts_resnet.depth==34 
+        model_CNN = build_model(pretrained=True,ex_type = opts_resnet.feature_extractor[0:-2]+'_{}'.format(opts_resnet.clip_size))
+    elif opts_resnet.feature_extractor == 'resnet2+1d':
+        assert opts_resnet.clip_size==16
+        model_CNN = resnet2p1d_build_model(opts_resnet.depth)
+    elif opts_resnet.feature_extractor == 'resnet3d':
+        assert opts_resnet.clip_size==16
+        model_CNN = resnet3d_build_model(opts_resnet.depth)
+    elif opts_resnet.feature_extractor == 'resnet50_2p1d_32':
+        assert opts_resnet.clip_size==32 and opts_resnet.depth == 50
+        model_CNN = resnet50_2p1d_32_build_model(opts_resnet.depth)
     #model_CNN_dict = model_CNN.state_dict()
 
-    if initial_epoch > 0:
-        model_CNN_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_CNN', initial_epoch-1))))
+    if opts_resnet.initial_epoch > 0:
+        model_CNN_pretrained_dict = torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('model_CNN', opts_resnet.initial_epoch-1))))
         model_CNN.load_state_dict(model_CNN_pretrained_dict)
     
     model_CNN = model_CNN.cuda()
@@ -314,29 +356,29 @@ if __name__ == '__main__':
     # loading our fc6 layer
     model_my_fc6 = fc_layer()
     #model_fc6_dict = model_my_fc6.state_dict()
-    if initial_epoch > 0:
-        model_fc6_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_my_fc6', initial_epoch-1))))  
+    if opts_resnet.initial_epoch > 0:
+        model_fc6_pretrained_dict = torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('model_my_fc6', opts_resnet.initial_epoch-1))))  
         model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
     model_my_fc6.cuda()
 
     # loading our score regressor
     model_score_regressor = score_regressor()
-    if initial_epoch > 0:
-        model_score_regressor_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_score_regressor', initial_epoch-1))))
+    if opts_resnet.initial_epoch > 0:
+        model_score_regressor_pretrained_dict = torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('model_score_regressor', opts_resnet.initial_epoch-1))))
         model_score_regressor.load_state_dict(model_score_regressor_pretrained_dict)
     model_score_regressor = model_score_regressor.cuda()
     
 
     model_attention_scores = None
-    if with_weight:
+    if opts_resnet.with_weight:
         model_attention_scores = attention_scores()
-        if initial_epoch > 0:
-            model_attention_scores_pretrained_dict = torch.load((os.path.join(saving_dir, '%s_%d.pth' % ('model_attention_scores', initial_epoch-1))))
+        if opts_resnet.initial_epoch > 0:
+            model_attention_scores_pretrained_dict = torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('model_attention_scores', opts_resnet.initial_epoch-1))))
             model_attention_scores.load_state_dict(model_attention_scores_pretrained_dict)
 
         model_attention_scores.cuda()
     print('Using Final Score Loss')
-
+    print(opts_resnet.train_action)
 
     main()
 

@@ -145,6 +145,7 @@ class VideoDataset(Dataset):
                 label_captions_mask[:int(label_captions_non_zero[0][0]) + 1] = 1
 
         data = {}
+        dar
         data['video'] = images
         data['label_position'] = label_position; data['label_armstand'] = label_armstand
         data['label_rot_type'] = label_rot_type; data['label_ss_no'] = label_ss_no; data['label_tw_no'] = label_tw_no
