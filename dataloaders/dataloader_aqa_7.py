@@ -1,19 +1,4 @@
-# Author: Paritosh Parmar (https://github.com/ParitoshParmar)
-#
-# Code for C3D-LSTM used in:
-# [1] @inproceedings{parmar2017learning,
-#   title={Learning to score olympic events},
-#   author={Parmar, Paritosh and Morris, Brendan Tran},
-#   booktitle={Computer Vision and Pattern Recognition Workshops (CVPRW), 2017 IEEE Conference on},
-#   pages={76--84},
-#   year={2017},
-#   organization={IEEE}}
-#
-# [2] @article{parmar2018action,
-#   title={Action Quality Assessment Across Multiple Actions},
-#   author={Parmar, Paritosh and Morris, Brendan Tran},
-#   journal={arXiv preprint arXiv:1812.06367},
-#   year={2018}}
+
 
 import random
 import os

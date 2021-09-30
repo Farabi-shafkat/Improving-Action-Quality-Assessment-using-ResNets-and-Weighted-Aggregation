@@ -1,38 +1,27 @@
-# Author: Paritosh Parmar (https://github.com/ParitoshParmar)
-# Code used in the following, also if you find it useful, please consider citing the following:
-#
-# @inproceedings{parmar2019and,
-#   title={What and How Well You Performed? A Multitask Learning Approach to Action Quality Assessment},
-#   author={Parmar, Paritosh and Tran Morris, Brendan},
-#   booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
-#   pages={304--313},
-#   year={2019}
-# }
-
 import os
 import torch
 from torch.utils.data import DataLoader
-from dataloaders.dataloader_C3DAVG import VideoDataset
+from dataloaders.dataloader_MTLAQA import VideoDataset
 from dataloaders.dataloader_aqa_7 import VideoDataset_aqa7
 import random
 import scipy.stats as stats
 import torch.optim as optim
 import torch.nn as nn
 import argparse as arg
-#from models.C3DAVG.C3D_altered import C3D_altered
+
 
 import opts_resnet 
 from utils import utils_1
 import numpy as np
 from make_graph import draw_graph
 
-from models.ig65_resnet2.fc_layer import fc_layer
-from models.ig65_resnet2.regressor import score_regressor
-from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
-from models.ig65_resnet2.attention_scores import attention_scores
-from models.ig65_resnet2.resnet2p1d import build_model as resnet2p1d_build_model
-from models.ig65_resnet2.resnet3d import build_model as resnet3d_build_model
-from models.ig65_resnet2.resnet50_2p1d_32 import build_model as resnet50_2p1d_32_build_model
+from models.models.fc_layer import fc_layer
+from models.models.regressor import score_regressor
+from models.models.r2plus1d_34_32_ig65m import build_model
+from models.models.attention_scores import attention_scores
+from models.models.resnet2p1d import build_model as resnet2p1d_build_model
+from models.models.resnet3d import build_model as resnet3d_build_model
+from models.models.resnet50_2p1d_32 import build_model as resnet50_2p1d_32_build_model
 
 torch.manual_seed(opts_resnet.randomseed); torch.cuda.manual_seed_all(opts_resnet.randomseed); random.seed(opts_resnet.randomseed); np.random.seed(opts_resnet.randomseed)
 torch.backends.cudnn.deterministic=True
@@ -99,23 +88,12 @@ def train_phase(train_dataloader, optimizer, criterions, epoch):
             
             clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
             
-            #print(clip_feats_temp.shape)
 
-       # soft_max = torch.nn.Softmax(dim=2)
-       # att_scores = soft_max(att_scores)
-        #clip_feats = clip_feats * att_scores
-        #clip_feats_avg = clip_feats.sum(2)  ##none X512
-        #clip_feats_avg = clip_feats.mean(1)
-
-        #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
-        #print(difficulty)
-        #print(model_score_regressor(clip_feats_avg))
         pred_final_score = difficulty*model_score_regressor(clip_feats,att_scores)
         
 
         loss = criterion_final_score(pred_final_score, true_final_score) + penalty_final_score(pred_final_score, true_final_score)
-        #loss = 0
-        #loss = loss_final_score
+       
      
         
         optimizer.zero_grad()
@@ -138,24 +116,7 @@ def test_phase(test_dataloader,criterions):
 
     with torch.no_grad():
         pred_scores = []; true_scores = []
-        """action_wise_scores_prediction={
-            
-            1:[],
-            2:[],
-            3:[],
-            4:[],
-            5:[],
-            6:[]
-        }
-        action_wise_scores_true={
-            
-            1:[],
-            2:[],
-            3:[],
-            4:[],
-            5:[],
-            6:[]
-        }"""
+        ""
 
         model_CNN.eval()
         model_my_fc6.eval()
@@ -200,26 +161,14 @@ def test_phase(test_dataloader,criterions):
             
                 clip_feats = torch.cat((clip_feats, clip_feats_temp), 2) ## none X 512 X 3
 
-         #   soft_max = torch.nn.Softmax(dim=2).cuda()
-         #   soft_max.train()
-        #    att_scores = soft_max(att_scores)
-         #   clip_feats = clip_feats * att_scores
-          #  clip_feats_avg = clip_feats.sum(2)
-            # clip_feats_avg = clip_feats.mean(2)  ##none X512
-            #clip_feats_avg = clip_feats.mean(1)
-
-            #sample_feats_fc6 = model_my_fc6(clip_feats_avg)
-            #print(difficulty)
-            #print(model_score_regressor(clip_feats_avg))
+      
             temp_final_score = difficulty*model_score_regressor(clip_feats,att_scores)
-            #temp_final_score = model_score_regressor(sample_feats_fc6)
+        
             pred_scores.extend([element[0] for element in temp_final_score.data.cpu().numpy()])
          
-            #for act,sc in zip(data['action'].data.numpy(),[element[0] for element in temp_final_score.data.cpu().numpy()]):
-            #    action_wise_scores_prediction[act].append(sc)
+
             loss = criterion_final_score(temp_final_score, true_final_score)+ penalty_final_score(temp_final_score, true_final_score)
-          #  loss = 0
-          #  loss += loss_final_score
+
             accumulated_loss += loss.item()
             iteration += 1
     
@@ -229,12 +178,6 @@ def test_phase(test_dataloader,criterions):
         print('True scores: ', true_scores)
         print('Correlation : ', rho)
 
-       # print("action wise correlation..............")
-        #action_rho = []
-        #for key in range(1,7):
-            #ro,_  = stats.spearmanr(action_wise_scores_prediction[key], action_wise_scores_true[key])
-        #    action_rho.append(ro)
-         #   print("Action {}: {}".format(key,ro))
 
 
 
@@ -250,17 +193,7 @@ def main():
         os.mkdir(opts_resnet.saving_dir)
     
 
-   # parameters_2_optimize = (list(model_CNN.parameters()) + list(model_my_fc6.parameters()) +
-                           #list(model_score_regressor.parameters()))
-    #parameters_2_optimize_named = (list(model_CNN.named_parameters()) + list(model_my_fc6.named_parameters()) +
-                                  # list(model_score_regressor.named_parameters()))
-    """
-        for param in list(model_CNN.features.parameters())[:-39]:
-        #  print(fet," sds ",fet.parameters)
-            param.requires_grad = False
-    """
-   # model_CNN.requires_grad = False
-  #  parameters_2_optimize =  list(model_CNN.parameters())+list(model_my_fc6.parameters()) + list(model_score_regressor.parameters())
+    
     parameters_2_optimize = [
         {'params': model_CNN.parameters(),'lr':0.00001},
         {'params': model_attention_scores.parameters(), 'lr':0.00001},
@@ -320,7 +253,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # loading the altered C3D backbone (ie C3D upto before fc-6)
+   
     parser = arg.ArgumentParser()
     parser.add_argument('--initial_epoch',type = int)
     parser.add_argument('--train_action',type = int)
@@ -341,7 +274,7 @@ if __name__ == '__main__':
     elif opts_resnet.feature_extractor == 'resnet50_2p1d_32':
         assert opts_resnet.clip_size==32 and opts_resnet.depth == 50
         model_CNN = resnet50_2p1d_32_build_model(opts_resnet.depth)
-    #model_CNN_dict = model_CNN.state_dict()
+   
 
     if opts_resnet.initial_epoch > 0:
         model_CNN_pretrained_dict = torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('model_CNN', opts_resnet.initial_epoch-1))))
@@ -349,15 +282,15 @@ if __name__ == '__main__':
     
     model_CNN = model_CNN.cuda()
 
-    # loading our fc6 layer
+ 
     model_my_fc6 = fc_layer()
-    #model_fc6_dict = model_my_fc6.state_dict()
+ 
     if opts_resnet.initial_epoch > 0:
         model_fc6_pretrained_dict = torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('model_my_fc6', opts_resnet.initial_epoch-1))))  
         model_my_fc6.load_state_dict(model_fc6_pretrained_dict)
     model_my_fc6.cuda()
 
-    # loading our score regressor
+
     model_score_regressor = score_regressor()
     if opts_resnet.initial_epoch > 0:
         model_score_regressor_pretrained_dict = torch.load((os.path.join(opts_resnet.saving_dir, '%s_%d.pth' % ('model_score_regressor', opts_resnet.initial_epoch-1))))

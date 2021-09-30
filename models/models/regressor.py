@@ -56,7 +56,7 @@ class score_regressor(nn.Module):
 import os
 import torch
 from torch.utils.data import DataLoader
-from dataloaders.dataloader_C3DAVG import VideoDataset
+from dataloaders.dataloader_MTLAQA import VideoDataset
 import random
 import scipy.stats as stats
 import torch.optim as optim
@@ -76,10 +76,10 @@ from models.C3D_MC5 import C3D_MC5
 from models.c3d_seperable_batch_norm import C3D_SP
 from models.C3D_MC3 import C3D_MC3
 from models.C3D_MC4 import C3D_MC4
-from models.ig65_resnet2.fc_layer import fc_layer
-from models.ig65_resnet2.regressor import score_regressor
-from models.ig65_resnet2.r2plus1d_34_32_ig65m import build_model
-from models.ig65_resnet2.attention_scores import attention_scores
+from models.models.fc_layer import fc_layer
+from models.models.regressor import score_regressor
+from models.models.r2plus1d_34_32_ig65m import build_model
+from models.models.attention_scores import attention_scores
 
 
 torch.manual_seed(randomseed); torch.cuda.manual_seed_all(randomseed); random.seed(randomseed); np.random.seed(randomseed)
