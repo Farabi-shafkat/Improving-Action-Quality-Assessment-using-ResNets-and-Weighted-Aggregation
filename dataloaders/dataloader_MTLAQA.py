@@ -101,7 +101,7 @@ class VideoDataset(Dataset):
             hori_flip = random.randint(0,1)
 
         index_list = [ x for x in range(start_frame,end_frame)]
-        image_list= { cur:os.path.join("/content/content",'video{:d}_frames'.format(self.keys[ix][0]), '{:d}.jpg'.format(cur))   for cur in index_list}
+        image_list= { cur:os.path.join(dataset_frames_dir,'video{:d}_frames'.format(self.keys[ix][0]), '{:d}.jpg'.format(cur))   for cur in index_list}
   
        # print(" debuf farabi {}".format(len(image_list)))  
        # print(image_list)    
