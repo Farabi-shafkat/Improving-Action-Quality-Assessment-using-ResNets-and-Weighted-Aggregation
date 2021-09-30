@@ -15,7 +15,7 @@ Pre-trained models: The resnet's used in our code requires pre-trianed models. T
 * [PyTorch](https://pytorch.org/)
 * Python 3
 ## Dataset
-Download the dataset from [here](https://github.com/Farabi-shafkat/MTL-AQA). Extract the necessary frames from the videos. The code expects the frames to be in a folder structure such as this:
+Download the dataset from [here](https://github.com/ParitoshParmar/MTL-AQA). Extract the necessary frames from the videos. The code expects the frames to be in a folder structure such as this:
 ```
 ~/frames
    /video0_freames
