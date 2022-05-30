@@ -1,6 +1,7 @@
-This is the PyTorch code for the following paper: 
+This is the PyTorch code for the following paper presented in IbPRIA 2022: 
 
-[Improving-Action-Quality-Assessment-using-ResNets-and-Weighted-Aggregation](https://arxiv.org/abs/2102.10555)
+[Improving Action Quality Assessment Using Weighted Aggregation]([https://arxiv.org/abs/2102.10555](https://link.springer.com/chapter/10.1007/978-3-031-04881-4_46))
+[Arxiv] (https://arxiv.org/abs/2102.10555)
 
 The code can be used to reproduce the resutls on MTL-AQA dataset.
 
