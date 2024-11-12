@@ -42,3 +42,14 @@ Execute the following command:
 python train_test_resnet.py --initial_epoch 0
 ```
 Change the value of *initial_epoch* to resume the execution from some other epoch. 
+
+If you find this useful, consider citing:
+
+@inproceedings{farabi2022improving,
+  title={Improving action quality assessment using weighted aggregation},
+  author={Farabi, Shafkat and Himel, Hasibul and Gazzali, Fakhruddin and Hasan, Md Bakhtiar and Kabir, Md Hasanul and Farazi, Moshiur},
+  booktitle={Iberian Conference on Pattern Recognition and Image Analysis},
+  pages={576--587},
+  year={2022},
+  organization={Springer}
+}
